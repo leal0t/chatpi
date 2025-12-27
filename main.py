@@ -1,32 +1,32 @@
+from wakeword import WakeWordDetector
 from listen import record_audio
 from chat import transcribe, ask_chatgpt
 from speak import speak_audio
 
-print("Maple assistant is ready.")
-print("Press Enter to talk. Press Ctrl+C to quit.\n")
+wake = WakeWordDetector(threshold=0.5)
+
+print("Hali is ready!")
+print("Say 'Hey Rhasspy' to wake her up. Ctrl+C to quit.\n")
 
 while True:
     try:
-        input("👉 Press Enter, then speak when prompted...")
-        
-        # Record your voice
+        wake.wait_for_wake_word()
+
+        print("🔔 Wake word heard. Listening for your question...")
         audio_file = record_audio()
-        
-        # Transcribe speech to text
+
         text = transcribe(audio_file)
         print(f"You said: {text!r}")
-        
+
         if not text.strip():
-            print("I didn't catch anything. Let's try again.\n")
+            print("I didn't catch that. Let's try again.\n")
             continue
-        
-        # Ask ChatGPT
+
         response = ask_chatgpt(text)
-        print(f"Maple: {response}\n")
-        
-        # Speak the response out loud
+        print(f"Hali: {response}\n")
+
         speak_audio(response)
 
     except KeyboardInterrupt:
-        print("\nExiting Maple. Goodbye!")
+        print("\n👋 Exiting Hali. Goodbye!")
         break
