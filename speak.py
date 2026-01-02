@@ -9,7 +9,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def speak_audio(text):
     speech = client.audio.speech.create(
         model="gpt-4o-mini-tts",
-        voice="alloy",
+        voice="nova",
         input=text
     )
 
