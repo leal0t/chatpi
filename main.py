@@ -4,7 +4,7 @@ from listen import record_audio
 from chat import transcribe, ask_chatgpt
 from speak import speak_audio
 
-WAKE_GREETING = "Hey, what's up. How's everything going?"
+WAKE_GREETING = "Hey, what's up. If I've not met you before, my name is Hali. How's everything going?"
 SILENCE_TIMEOUT_SECONDS = 10
 RECORD_SECONDS = 10  # how long to listen for each turn
 SILENCE_RMS_THRESHOLD = 0.005  # tweak this if needed

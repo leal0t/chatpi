@@ -1,0 +1,480 @@
+[0;93m2026-01-17 15:52:38.331125780 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-17 16:00:21.604979377 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+[0;93m2026-01-18 10:12:52.930426033 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 10:31:04.905132117 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+[0;93m2026-01-18 10:56:20.488707964 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 10:57:42.067188061 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+[0;93m2026-01-18 11:05:23.657998489 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+ALSA lib pcm_dsnoop.c:566:(snd_pcm_dsnoop_open) unable to open slave
+Connection failure: Connection refused
+pa_context_connect() failed: Connection refused
+[0;93m2026-01-18 11:39:55.237555118 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 11:57:33.788963953 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 12:14:02.385078501 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 12:33:20.295101786 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 13:17:15.187574255 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 13:33:49.969759902 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Expression 'alsa_snd_pcm_poll_descriptors_revents( self->pcm, pfds, self->nfds, &revents )' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 3665
+Expression 'PaAlsaStreamComponent_EndPolling( &self->capture, capturePfds, &pollCapture, &xrun )' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 3887
+Expression 'PaAlsaStream_WaitForFrames( stream, &framesAvail, &xrun )' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 4285
+/home/pi/chatpi/listen.py:26: RuntimeWarning: overflow encountered in square
+  rms = float(np.sqrt(np.mean(np.square(mono))))
+/home/pi/chatpi/venv/lib/python3.11/site-packages/wavio.py:259: ClippedDataWarning: Some data values have been clipped.  With scale=1.0, the interval of input values that will not be clipped is [-1.0000305180437934, 1.0]
+  _warnings.warn(ClippedDataWarning(msg))
+Failed to create secure directory (/run/user/1000/pulse): No such file or directory
+ALSA lib pulse.c:242:(pulse_connect) PulseAudio: Unable to connect: Connection refused
+
+Expression 'ret' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 1736
+Expression 'AlsaOpen( &alsaApi->baseHostApiRep, params, streamDir, &self->pcm )' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 1904
+Expression 'PaAlsaStreamComponent_Initialize( &self->capture, alsaApi, inParams, StreamDirection_In, NULL != callback )' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 2171
+Expression 'PaAlsaStream_Initialize( stream, alsaHostApi, inputParameters, outputParameters, sampleRate, framesPerBuffer, callback, streamFlags, userData )' failed in 'src/hostapi/alsa/pa_linux_alsa.c', line: 2839
+Traceback (most recent call last):
+  File "/home/pi/chatpi/main.py", line 90, in <module>
+    main()
+  File "/home/pi/chatpi/main.py", line 79, in main
+    conversation_loop()
+  File "/home/pi/chatpi/main.py", line 26, in conversation_loop
+    audio_file, rms = record_audio(RECORD_SECONDS)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pi/chatpi/listen.py", line 15, in record_audio
+    audio = sd.rec(
+            ^^^^^^^
+  File "/home/pi/chatpi/venv/lib/python3.11/site-packages/sounddevice.py", line 279, in rec
+    ctx.start_stream(InputStream, samplerate, ctx.input_channels,
+  File "/home/pi/chatpi/venv/lib/python3.11/site-packages/sounddevice.py", line 2653, in start_stream
+    self.stream = StreamClass(samplerate=samplerate,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pi/chatpi/venv/lib/python3.11/site-packages/sounddevice.py", line 1452, in __init__
+    _StreamBase.__init__(self, kind='input', wrap_callback='array',
+  File "/home/pi/chatpi/venv/lib/python3.11/site-packages/sounddevice.py", line 909, in __init__
+    _check(_lib.Pa_OpenStream(self._ptr, iparameters, oparameters,
+  File "/home/pi/chatpi/venv/lib/python3.11/site-packages/sounddevice.py", line 2823, in _check
+    raise PortAudioError(errormsg, err)
+sounddevice.PortAudioError: Error opening InputStream: Illegal combination of I/O devices [PaErrorCode -9993]
+[0;93m2026-01-18 13:47:10.647480016 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 13:51:40.391748967 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[0;93m2026-01-18 13:52:35.049684392 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 13:54:38.789368105 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 14:10:49.767917017 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 19:18:17.158976550 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-18 19:40:02.600619922 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+[0;93m2026-01-21 18:39:57.918375642 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
