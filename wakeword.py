@@ -51,7 +51,7 @@ class WakeWordDetector:
             dtype="float32",
             blocksize=self.blocksize,
             latency=self.latency,
-            device=self.device,
+            device="pulse",
         ) as stream:
 
             # ✅ NEW: Warmup discard to avoid immediate false trigger

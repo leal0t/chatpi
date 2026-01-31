@@ -9,9 +9,10 @@ from speak import speak_audio
 WAKE_GREETING = "Hey, what's up. If I've not met you before, my name is Hali. How's everything going?"
 WAKE_SHORT_ACK = "Yeah?"
 SLEEP_ACK = "Okay. Going back to sleep."
+GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 
 SILENCE_TIMEOUT_SECONDS = 10
-RECORD_SECONDS = 10  # how long to listen for each turn
+RECORD_SECONDS = 6  # how long to listen for each turn
 SILENCE_RMS_THRESHOLD = 0.005  # tweak this if needed
 
 # Phrases that end the session immediately.
@@ -27,9 +28,66 @@ GOODBYE_PATTERNS = [
     r"\bthanks\b.*\bbye\b",
 ]
 
+# Phrases that greets Hali.
+GREETING_PATTERNS = [
+    # Simple greetings
+    r"\bhow's it going\b",
+    r"\bhow are you\b",
+    r"\bhow are you doing\b",
+    r"\bwhat's up\b",
+    r"\bwhats up\b",
+    r"\bhey\b",
+    r"\bhello\b",
+    r"\bhi\b",
+
+    # Addressing Hali directly
+    r"\bhey hali\b",
+    r"\bhi hali\b",
+    r"\bhello hali\b",
+    r"\bhali what's up\b",
+    r"\bhali how's it going\b",
+    r"\bhali how are you\b",
+
+    # Casual conversational starts
+    r"\bwhat are you up to\b",
+    r"\bwhat's going on\b",
+    r"\bwhat have you been up to\b",
+    r"\bhow's your day\b",
+    r"\bhow's your day going\b",
+
+    # “I’m good” style greetings
+    r"\bit's going good\b",
+    r"\bit's going well\b",
+    r"\bi'm good\b",
+    r"\bdoing good\b",
+    r"\bdoing well\b",
+
+    # Combined natural phrases
+    r"\bit's going good.*how are you\b",
+    r"\bit's going good.*how's it going\b",
+    r"\bi'm good.*how about you\b",
+    r"\bdoing good.*what about you\b",
+]
+
 def is_goodbye(text: str) -> bool:
     t = (text or "").strip().lower()
     return any(re.search(p, t) for p in GOODBYE_PATTERNS)
+    
+#def is_greeting(text: str) -> bool:
+#    t = (text or "").strip().lower()
+#    return any(re.search(p, t, re.IGNORECASE) for p in GREETING_PATTERNS)
+
+def is_greeting(text: str) -> bool:
+    t = (text or "").lower()
+
+    GREETING_WORDS = [
+        "hello", "hi", "hey",
+        "how are you", "how's it going",
+        "what's up", "whats up",
+        "how's your day",
+    ]
+
+    return any(w in t for w in GREETING_WORDS)
 
 def conversation_loop(say_full_greeting: bool = True):
     """
@@ -82,6 +140,12 @@ def conversation_loop(say_full_greeting: bool = True):
             else:
                 continue
 
+        # ✅ Greeting command
+        if is_greeting(text):
+            print("👋 Greeting phrase detected.\n")
+            speak_audio(GREET_ACK)
+            continue
+        
         # ✅ Goodbye / sleep command
         if is_goodbye(text):
             print("👋 Goodbye phrase detected — sleeping.\n")
@@ -98,7 +162,7 @@ def conversation_loop(say_full_greeting: bool = True):
         last_activity = time.monotonic()
 
 def main():
-    wake = WakeWordDetector(threshold=0.5)
+    wake = WakeWordDetector(threshold=0.35)
 
     print("Hali is ready on the Pi Zero!")
     print("Say 'Hey Rhasspy' to wake her up. Ctrl+C to quit.\n")
