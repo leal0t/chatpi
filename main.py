@@ -14,6 +14,7 @@ GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 SILENCE_TIMEOUT_SECONDS = 10
 RECORD_SECONDS = 6  # how long to listen for each turn
 SILENCE_RMS_THRESHOLD = 0.005  # tweak this if needed
+MAX_CONVERSATION_TURNS = 6  # 3 user + 3 Hali replies
 
 # Phrases that end the session immediately.
 GOODBYE_PATTERNS = [
@@ -69,6 +70,16 @@ GREETING_PATTERNS = [
     r"\bdoing good.*what about you\b",
 ]
 
+IGNORE_PHRASES = [
+    "thank you for watching",
+    "thanks for watching",
+    "like and subscribe",
+    "subscribe",
+    "hit the like button",
+    "notification bell",
+    "we'll see you next time",
+]
+
 def is_goodbye(text: str) -> bool:
     t = (text or "").strip().lower()
     return any(re.search(p, t) for p in GOODBYE_PATTERNS)
@@ -90,6 +101,9 @@ def is_greeting(text: str) -> bool:
     return any(w in t for w in GREETING_WORDS)
 
 def conversation_loop(say_full_greeting: bool = True):
+    conversation_history = []
+    first_turn = True
+
     """
     Conversation loop that stays awake until:
       - user says a goodbye phrase (immediate sleep), OR
@@ -129,7 +143,24 @@ def conversation_loop(say_full_greeting: bool = True):
         text = transcribe(audio_file)
         print(f"You said: {text!r}")
 
+                # Store user message in conversation memory
+        conversation_history.append({
+            "role": "user",
+            "content": text
+        })
+
+        # Keep memory bounded
+        conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
+        
         clean_text = text.strip().lower()
+
+        # ✅ Ignore common background/TV phrases that keep Hali awake forever
+        if any(p in clean_text for p in IGNORE_PHRASES):
+        	print(f"📺 Ignoring background phrase: {clean_text!r}")
+        	if now - last_activity > SILENCE_TIMEOUT_SECONDS:
+        		print("😴 Background noise only — going back to sleep.\n")
+        		return
+        	continue
 
         # Treat very short or meaningless text as noise
         if not clean_text or len(clean_text) < 3:
@@ -140,12 +171,14 @@ def conversation_loop(say_full_greeting: bool = True):
             else:
                 continue
 
-        # ✅ Greeting command
-        if is_greeting(text):
-            print("👋 Greeting phrase detected.\n")
+        # ✅ Greeting intent — ONLY on first user turn after wake
+        if first_turn and is_greeting(text):
+            print("👋 Greeting phrase detected (first turn).")
             speak_audio(GREET_ACK)
+            last_activity = time.monotonic()
+            first_turn = False
             continue
-        
+
         # ✅ Goodbye / sleep command
         if is_goodbye(text):
             print("👋 Goodbye phrase detected — sleeping.\n")
@@ -153,8 +186,18 @@ def conversation_loop(say_full_greeting: bool = True):
             return
 
         # Heard something meaningful: user spoke
-        response = ask_chatgpt(text)
+        first_turn = False
+
+        response = ask_chatgpt(conversation_history)
         print(f"Hali: {response}\n")
+
+        # Store assistant reply in memory
+        conversation_history.append({
+            "role": "assistant",
+            "content": response
+        })
+
+        conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
 
         speak_audio(response)
 
