@@ -1,233 +1,216 @@
 import time
 import re
 
-from wakeword import WakeWordDetector
+from edge_wakeword import EdgeWakeWordDetector
 from listen import record_audio
 from chat import transcribe, ask_chatgpt
 from speak import speak_audio
 
-WAKE_GREETING = "Hey, what's up. If I've not met you before, my name is Hali. How's everything going?"
+WAKE_GREETING = "Hey, what's up.  How's everything going?"
 WAKE_SHORT_ACK = "Yeah?"
-SLEEP_ACK = "Okay. Going back to sleep."
+SLEEP_ACK = "Okay. Going back to sleep.  me! me! me! me!"
 GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 
 SILENCE_TIMEOUT_SECONDS = 10
-RECORD_SECONDS = 6  # how long to listen for each turn
-SILENCE_RMS_THRESHOLD = 0.005  # tweak this if needed
-MAX_CONVERSATION_TURNS = 6  # 3 user + 3 Hali replies
+RECORD_SECONDS = 6
+SILENCE_RMS_THRESHOLD = 0.005
+MAX_CONVERSATION_TURNS = 12
 
-# Phrases that end the session immediately.
 GOODBYE_PATTERNS = [
-    r"\bgoodbye\b",
-    r"\bbye\b",
-    r"\bgo to sleep\b",
-    r"\bsleep\b",
-    r"\bstop listening\b",
-    r"\bcancel\b",
-    r"\bthat's all\b",
-    r"\bthat is all\b",
-    r"\bthanks\b.*\bbye\b",
+	r"\bgoodbye\b",
+	r"\bbye\b",
+	r"\bgo to sleep\b",
+	r"\bsleep\b",
+	r"\bstop listening\b",
+	r"\bcancel\b",
+	r"\bthat's all\b",
+	r"\bthat is all\b",
+	r"\bthanks\b.*\bbye\b",
 ]
 
-# Phrases that greets Hali.
 GREETING_PATTERNS = [
-    # Simple greetings
-    r"\bhow's it going\b",
-    r"\bhow are you\b",
-    r"\bhow are you doing\b",
-    r"\bwhat's up\b",
-    r"\bwhats up\b",
-    r"\bhey\b",
-    r"\bhello\b",
-    r"\bhi\b",
-
-    # Addressing Hali directly
-    r"\bhey hali\b",
-    r"\bhi hali\b",
-    r"\bhello hali\b",
-    r"\bhali what's up\b",
-    r"\bhali how's it going\b",
-    r"\bhali how are you\b",
-
-    # Casual conversational starts
-    r"\bwhat are you up to\b",
-    r"\bwhat's going on\b",
-    r"\bwhat have you been up to\b",
-    r"\bhow's your day\b",
-    r"\bhow's your day going\b",
-
-    # “I’m good” style greetings
-    r"\bit's going good\b",
-    r"\bit's going well\b",
-    r"\bi'm good\b",
-    r"\bdoing good\b",
-    r"\bdoing well\b",
-
-    # Combined natural phrases
-    r"\bit's going good.*how are you\b",
-    r"\bit's going good.*how's it going\b",
-    r"\bi'm good.*how about you\b",
-    r"\bdoing good.*what about you\b",
+	r"\bhow's it going\b",
+	r"\bhow are you\b",
+	r"\bhow are you doing\b",
+	r"\bwhat's up\b",
+	r"\bwhats up\b",
+	r"\bhey\b",
+	r"\bhello\b",
+	r"\bhi\b",
+	r"\bhey hali\b",
+	r"\bhi hali\b",
+	r"\bhello hali\b",
+	r"\bhali what's up\b",
+	r"\bhali how's it going\b",
+	r"\bhali how are you\b",
+	r"\bwhat are you up to\b",
+	r"\bwhat's going on\b",
+	r"\bwhat have you been up to\b",
+	r"\bhow's your day\b",
+	r"\bhow's your day going\b",
+	r"\bit's going good\b",
+	r"\bit's going well\b",
+	r"\bi'm good\b",
+	r"\bdoing good\b",
+	r"\bdoing well\b",
+	r"\bit's going good.*how are you\b",
+	r"\bit's going good.*how's it going\b",
+	r"\bi'm good.*how about you\b",
+	r"\bdoing good.*what about you\b",
 ]
 
 IGNORE_PHRASES = [
-    "thank you for watching",
-    "thanks for watching",
-    "like and subscribe",
-    "subscribe",
-    "hit the like button",
-    "notification bell",
-    "we'll see you next time",
+	"thank you for watching",
+	"thanks for watching",
+	"like and subscribe",
+	"subscribe",
+	"hit the like button",
+	"notification bell",
+	"we'll see you next time",
 ]
 
+
 def is_goodbye(text: str) -> bool:
-    t = (text or "").strip().lower()
-    return any(re.search(p, t) for p in GOODBYE_PATTERNS)
-    
-#def is_greeting(text: str) -> bool:
-#    t = (text or "").strip().lower()
-#    return any(re.search(p, t, re.IGNORECASE) for p in GREETING_PATTERNS)
+	t = (text or "").strip().lower()
+	return any(re.search(p, t) for p in GOODBYE_PATTERNS)
+
 
 def is_greeting(text: str) -> bool:
-    t = (text or "").lower()
+	t = (text or "").lower()
 
-    GREETING_WORDS = [
-        "hello", "hi", "hey",
-        "how are you", "how's it going",
-        "what's up", "whats up",
-        "how's your day",
-    ]
+	GREETING_WORDS = [
+		"hello", "hi", "hey",
+		"how are you", "how's it going",
+		"what's up", "whats up",
+		"how's your day",
+	]
 
-    return any(w in t for w in GREETING_WORDS)
+	return any(w in t for w in GREETING_WORDS)
+
 
 def conversation_loop(say_full_greeting: bool = True):
-    conversation_history = []
-    first_turn = True
+	conversation_history = []
+	first_turn = True
 
-    """
-    Conversation loop that stays awake until:
-      - user says a goodbye phrase (immediate sleep), OR
-      - there's no *real* speech (low RMS audio) for SILENCE_TIMEOUT_SECONDS
-        after Hali's last response.
-    """
-    print("🗣 Hali is awake. You don't need the wake word now.")
-    print("Just talk. Say 'goodbye' (or 'go to sleep') to end.\n")
+	"""
+	Conversation loop that stays awake until:
+	  - user says a goodbye phrase
+	  - silence timeout occurs
+	"""
+	print("🗣 Hali is awake. You don't need the wake word now.")
+	print("Just talk. Say 'goodbye' (or 'go to sleep') to end.\n")
 
-    # Say greeting out loud and start the activity timer
-    if say_full_greeting:
-        speak_audio(WAKE_GREETING)
-    else:
-        speak_audio(WAKE_SHORT_ACK)
+	if say_full_greeting:
+		speak_audio(WAKE_GREETING)
+	else:
+		speak_audio(WAKE_SHORT_ACK)
 
-    last_activity = time.monotonic()  # time of last meaningful interaction
+	last_activity = time.monotonic()
 
-    while True:
-        print("🎙 Listening for your question (or I'll nap soon)...")
-        audio_file, rms = record_audio(RECORD_SECONDS)
+	while True:
+		print("🎙 Listening for your question (or I'll nap soon)...")
+		audio_file, rms = record_audio(RECORD_SECONDS)
 
-        now = time.monotonic()
+		now = time.monotonic()
 
-        # --- First layer: amplitude-based silence detection ---
-        if rms < SILENCE_RMS_THRESHOLD:
-            print(f"(Silence / very quiet chunk: rms={rms:.4f})")
-            # Check if we've been quiet for too long
-            if now - last_activity > SILENCE_TIMEOUT_SECONDS:
-                print("😴 No speech detected for a bit — going back to sleep.\n")
-                return
-            else:
-                print("🤔 Didn't hear much that time, but I'm still awake.\n")
-                # Don't update last_activity, so the silence timer keeps running
-                continue
+		if rms < SILENCE_RMS_THRESHOLD:
+			print(f"(Silence / very quiet chunk: rms={rms:.4f})")
 
-        # --- If it's loud enough, then transcribe ---
-        text = transcribe(audio_file)
-        print(f"You said: {text!r}")
+			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
+				print("😴 No speech detected for a bit — going back to sleep.\n")
+				return
+			else:
+				print("🤔 Didn't hear much that time, but I'm still awake.\n")
+				continue
 
-                # Store user message in conversation memory
-        conversation_history.append({
-            "role": "user",
-            "content": text
-        })
+		text = transcribe(audio_file)
+		print(f"You said: {text!r}")
 
-        # Keep memory bounded
-        conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
-        
-        clean_text = text.strip().lower()
+		conversation_history.append({
+			"role": "user",
+			"content": text
+		})
 
-        # ✅ Ignore common background/TV phrases that keep Hali awake forever
-        if any(p in clean_text for p in IGNORE_PHRASES):
-        	print(f"📺 Ignoring background phrase: {clean_text!r}")
-        	if now - last_activity > SILENCE_TIMEOUT_SECONDS:
-        		print("😴 Background noise only — going back to sleep.\n")
-        		return
-        	continue
+		conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
 
-        # Treat very short or meaningless text as noise
-        if not clean_text or len(clean_text) < 3:
-            print("🤔 That sounded like noise, not real speech.")
-            if now - last_activity > SILENCE_TIMEOUT_SECONDS:
-                print("😴 No real speech for a bit — going back to sleep.\n")
-                return
-            else:
-                continue
+		clean_text = text.strip().lower()
 
-        # ✅ Greeting intent — ONLY on first user turn after wake
-        if first_turn and is_greeting(text):
-            print("👋 Greeting phrase detected (first turn).")
-            speak_audio(GREET_ACK)
-            last_activity = time.monotonic()
-            first_turn = False
-            continue
+		if any(p in clean_text for p in IGNORE_PHRASES):
+			print(f"📺 Ignoring background phrase: {clean_text!r}")
 
-        # ✅ Goodbye / sleep command
-        if is_goodbye(text):
-            print("👋 Goodbye phrase detected — sleeping.\n")
-            speak_audio(SLEEP_ACK)
-            return
+			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
+				print("😴 Background noise only — going back to sleep.\n")
+				return
 
-        # Heard something meaningful: user spoke
-        first_turn = False
+			continue
 
-        response = ask_chatgpt(conversation_history)
-        print(f"Hali: {response}\n")
+		if not clean_text or len(clean_text) < 3:
+			print("🤔 That sounded like noise, not real speech.")
 
-        # Store assistant reply in memory
-        conversation_history.append({
-            "role": "assistant",
-            "content": response
-        })
+			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
+				print("😴 No real speech for a bit — going back to sleep.\n")
+				return
+			else:
+				continue
 
-        conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
+		if first_turn and is_greeting(text):
+			print("👋 Greeting phrase detected (first turn).")
+			speak_audio(GREET_ACK)
+			last_activity = time.monotonic()
+			first_turn = False
+			continue
 
-        speak_audio(response)
+		if is_goodbye(text):
+			print("👋 Goodbye phrase detected — sleeping.\n")
+			speak_audio(SLEEP_ACK)
+			return
 
-        # Reset activity timer to "just now" since Hali responded
-        last_activity = time.monotonic()
+		first_turn = False
+
+		response = ask_chatgpt(conversation_history)
+		print(f"Hali: {response}\n")
+
+		conversation_history.append({
+			"role": "assistant",
+			"content": response
+		})
+
+		conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
+
+		speak_audio(response)
+
+		last_activity = time.monotonic()
+
 
 def main():
-    wake = WakeWordDetector(threshold=0.35)
+	wake = EdgeWakeWordDetector(
+		model_path="/home/pi/chatpi/edge_wakeword/hey_hali.tflite",
+		samplerate=16000,
+		frame_duration=1.0,
+		hop_duration=0.20,
+		energy_threshold=0.012,
+		wakeword_class=0,           # 0=hey_hali, 1=noise, 2=unknown (alphabetical)
+		debounce_frames=2,
+		cooldown_seconds=2.5,
+		smoothing_frames=3,
+		confidence_threshold=0.55,  # wake score must be above 55% probability
+		confidence_margin=0.10,     # wake must beat next class by 10 percentage points
+		device=None,
+	)
 
-    print("Hali is ready on the Pi Zero!")
-    print("Say 'Hey Rhasspy' to wake her up. Ctrl+C to quit.\n")
+	print("Hali is ready on the Pi Zero!")
+	print("Say 'Hey Hali' to wake her up. Ctrl+C to quit.\n")
 
-    while True:
-        try:
-            # 1) Wait for the wake word
-            wake.wait_for_wake_word()
+	while True:
+		try:
+			wake.wait_for_wake_word()
+			conversation_loop(say_full_greeting=True)
+			time.sleep(2.0)
 
-            # 2) After wake word, go into a conversation loop
-            conversation_loop(say_full_greeting=True)
-
-            # ✅ IMPORTANT: ignore wakeword briefly so we don't re-trigger immediately
-            # from buffered mic audio or speaker echo.
-            time.sleep(2.0)
-
-            # then we naturally go back to waiting for wake word again
-
-        except KeyboardInterrupt:
-            print("\n👋 Exiting Hali. Goodbye!")
-            break
+		except KeyboardInterrupt:
+			print("\n👋 Exiting Hali. Goodbye!")
+			break
 
 
 if __name__ == "__main__":
-    main()
+	main()
