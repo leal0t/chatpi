@@ -77,14 +77,12 @@ def is_goodbye(text: str) -> bool:
 
 def is_greeting(text: str) -> bool:
 	t = (text or "").lower()
-
 	GREETING_WORDS = [
 		"hello", "hi", "hey",
 		"how are you", "how's it going",
 		"what's up", "whats up",
 		"how's your day",
 	]
-
 	return any(w in t for w in GREETING_WORDS)
 
 
@@ -92,11 +90,6 @@ def conversation_loop(say_full_greeting: bool = True):
 	conversation_history = []
 	first_turn = True
 
-	"""
-	Conversation loop that stays awake until:
-	  - user says a goodbye phrase
-	  - silence timeout occurs
-	"""
 	print("🗣 Hali is awake. You don't need the wake word now.")
 	print("Just talk. Say 'goodbye' (or 'go to sleep') to end.\n")
 
@@ -115,7 +108,6 @@ def conversation_loop(say_full_greeting: bool = True):
 
 		if rms < SILENCE_RMS_THRESHOLD:
 			print(f"(Silence / very quiet chunk: rms={rms:.4f})")
-
 			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
 				print("😴 No speech detected for a bit — going back to sleep.\n")
 				return
@@ -126,27 +118,20 @@ def conversation_loop(say_full_greeting: bool = True):
 		text = transcribe(audio_file)
 		print(f"You said: {text!r}")
 
-		conversation_history.append({
-			"role": "user",
-			"content": text
-		})
-
+		conversation_history.append({"role": "user", "content": text})
 		conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
 
 		clean_text = text.strip().lower()
 
 		if any(p in clean_text for p in IGNORE_PHRASES):
 			print(f"📺 Ignoring background phrase: {clean_text!r}")
-
 			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
 				print("😴 Background noise only — going back to sleep.\n")
 				return
-
 			continue
 
 		if not clean_text or len(clean_text) < 3:
 			print("🤔 That sounded like noise, not real speech.")
-
 			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
 				print("😴 No real speech for a bit — going back to sleep.\n")
 				return
@@ -170,15 +155,10 @@ def conversation_loop(say_full_greeting: bool = True):
 		response = ask_chatgpt(conversation_history)
 		print(f"Hali: {response}\n")
 
-		conversation_history.append({
-			"role": "assistant",
-			"content": response
-		})
-
+		conversation_history.append({"role": "assistant", "content": response})
 		conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
 
 		speak_audio(response)
-
 		last_activity = time.monotonic()
 
 
@@ -189,12 +169,10 @@ def main():
 		frame_duration=1.0,
 		hop_duration=0.20,
 		energy_threshold=0.012,
-		wakeword_class=0,           # 0=hey_hali, 1=noise, 2=unknown (alphabetical)
-		debounce_frames=2,
-		cooldown_seconds=2.5,
-		smoothing_frames=3,
-		confidence_threshold=0.55,  # wake score must be above 55% probability
-		confidence_margin=0.10,     # wake must beat next class by 10 percentage points
+		wakeword_class=0,
+		cooldown_seconds=2.0,
+		confidence_threshold=0.50,
+		confidence_margin=0.15,
 		device=None,
 	)
 
@@ -205,8 +183,7 @@ def main():
 		try:
 			wake.wait_for_wake_word()
 			conversation_loop(say_full_greeting=True)
-			time.sleep(2.0)
-
+			time.sleep(4.0)
 		except KeyboardInterrupt:
 			print("\n👋 Exiting Hali. Goodbye!")
 			break

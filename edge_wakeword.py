@@ -1,9 +1,90 @@
 import time
-from collections import deque
 
 import numpy as np
 import sounddevice as sd
 import tflite_runtime.interpreter as tflite
+
+
+# ============================================================
+# MFE (Mel Filterbank Energy) preprocessing
+# Parameters match Edge Impulse Transfer Learning (Keyword Spotting):
+#   Frame length : 0.02s
+#   Frame stride : 0.01s
+#   Filter number: 40
+#   FFT length   : 256
+#   Low frequency: 0 Hz
+#   Noise floor  : -52 dB
+# ============================================================
+
+def compute_mfe(
+    audio: np.ndarray,
+    samplerate: int = 16000,
+    frame_length: float = 0.02,
+    frame_stride: float = 0.01,
+    num_filters: int = 40,
+    fft_length: int = 256,
+    low_frequency: float = 0.0,
+    noise_floor_db: float = -52.0,
+) -> np.ndarray:
+    frame_len    = int(round(frame_length * samplerate))
+    frame_stride = int(round(frame_stride * samplerate))
+
+    # Frame the signal
+    num_frames = 1 + (len(audio) - frame_len) // frame_stride
+    indices    = (
+        np.tile(np.arange(frame_len), (num_frames, 1))
+        + np.tile(np.arange(num_frames) * frame_stride, (frame_len, 1)).T
+    )
+    frames = audio[indices].astype(np.float32)
+
+    # Hamming window
+    frames *= np.hamming(frame_len)
+
+    # FFT → power spectrum
+    mag   = np.abs(np.fft.rfft(frames, n=fft_length))
+    power = (mag ** 2) / fft_length
+
+    # Mel filterbank
+    high_frequency = samplerate / 2.0
+
+    def hz_to_mel(hz):
+        return 2595.0 * np.log10(1.0 + hz / 700.0)
+
+    def mel_to_hz(mel):
+        return 700.0 * (10.0 ** (mel / 2595.0) - 1.0)
+
+    mel_low  = hz_to_mel(low_frequency)
+    mel_high = hz_to_mel(high_frequency)
+    mel_pts  = np.linspace(mel_low, mel_high, num_filters + 2)
+    hz_pts   = mel_to_hz(mel_pts)
+    bin_pts  = np.floor((fft_length + 1) * hz_pts / samplerate).astype(int)
+
+    fbank = np.zeros((num_filters, fft_length // 2 + 1), dtype=np.float32)
+    for m in range(1, num_filters + 1):
+        f_left   = bin_pts[m - 1]
+        f_center = bin_pts[m]
+        f_right  = bin_pts[m + 1]
+        for k in range(f_left, f_center):
+            if f_center != f_left:
+                fbank[m - 1, k] = (k - f_left) / (f_center - f_left)
+        for k in range(f_center, f_right):
+            if f_right != f_center:
+                fbank[m - 1, k] = (f_right - k) / (f_right - f_center)
+
+    # Apply filterbank → energy
+    energy = np.dot(power, fbank.T)
+
+    # Noise floor clipping
+    noise_floor_linear = 10.0 ** (noise_floor_db / 10.0)
+    energy = np.maximum(energy, noise_floor_linear)
+
+    # Log energy
+    energy = np.log(energy)
+
+    # Fixed normalization — preserves energy differences between speech and silence
+    energy = np.clip((energy + 12.0) / 12.0, 0.0, 1.0)
+
+    return energy.flatten().astype(np.float32)
 
 
 class EdgeWakeWordDetector:
@@ -11,40 +92,29 @@ class EdgeWakeWordDetector:
         self,
         model_path: str,
         samplerate: int = 16000,
-        frame_duration: float = 1.0,
-        hop_duration: float = 0.20,
-        energy_threshold: float = 0.010,
-        wakeword_class: int = 0,        # 0=hey_hali, 1=noise, 2=unknown (alphabetical)
-        debounce_frames: int = 2,
-        cooldown_seconds: float = 2.5,
-        smoothing_frames: int = 3,
-        confidence_threshold: float = 0.55,  # wake score must exceed this (0.0-1.0)
-        confidence_margin: float = 0.10,     # wake must beat best_other by this much
+        frame_duration: float = 1.0,        # 1000ms window
+        hop_duration: float = 0.20,         # 200ms stride
+        energy_threshold: float = 0.010,    # skip silent frames
+        wakeword_class: int = 0,            # 0=hey_hali, 1=noise, 2=unknown
+        cooldown_seconds: float = 2.0,      # pause after detection
+        confidence_threshold: float = 0.40, # minimum hey_hali score
+        confidence_margin: float = 0.10,    # must beat next class by this
         device: int | None = None,
     ):
-        self.samplerate = samplerate
-        self.frame_duration = frame_duration
-        self.hop_duration = hop_duration
-        self.frame_samples = int(frame_duration * samplerate)
-        self.hop_samples = int(hop_duration * samplerate)
-
-        self.energy_threshold = energy_threshold
-        self.wakeword_class = wakeword_class
-        self.debounce_frames = debounce_frames
-        self.cooldown_seconds = cooldown_seconds
-        self.smoothing_frames = smoothing_frames
+        self.samplerate           = samplerate
+        self.frame_duration       = frame_duration
+        self.hop_duration         = hop_duration
+        self.frame_samples        = int(frame_duration * samplerate)
+        self.hop_samples          = int(hop_duration * samplerate)
+        self.energy_threshold     = energy_threshold
+        self.wakeword_class       = wakeword_class
+        self.cooldown_seconds     = cooldown_seconds
         self.confidence_threshold = confidence_threshold
-        self.confidence_margin = confidence_margin
-        self.device = device
+        self.confidence_margin    = confidence_margin
+        self.device               = device
 
         self._last_detect_time = 0.0
-        self._trigger_count = 0
-        self._wake_history = deque(maxlen=smoothing_frames)
-        self._prediction_history = deque(maxlen=smoothing_frames)
-        self._consecutive_wake_frames = 0
-        self._frames_seen = 0
-        self._warmup_frames = 4
-        self._buffer = np.zeros(self.frame_samples, dtype=np.float32)
+        self._buffer           = np.zeros(self.frame_samples, dtype=np.float32)
 
         # Load model
         self.interpreter = tflite.Interpreter(model_path=model_path)
@@ -59,76 +129,62 @@ class EdgeWakeWordDetector:
         self.input_dtype  = self.input_details[0]["dtype"]
         self.input_len    = int(self.input_shape[1])
 
-        # ── Input quantization params ────────────────────────────
-        # Correct formula: quantized = (float_value / scale) + zero_point
-        in_quant = self.input_details[0].get("quantization", (1.0, 0))
-        self._in_scale      = in_quant[0] if in_quant[0] != 0 else 1.0
-        self._in_zero_point = in_quant[1]
-
-        # ── Output quantization params ───────────────────────────
-        # Correct formula: float_value = scale * (quantized - zero_point)
-        out_quant = self.output_details[0].get("quantization", (1.0, 0))
+        # Output quantization
+        out_quant            = self.output_details[0].get("quantization", (1.0, 0))
         self._out_scale      = out_quant[0] if out_quant[0] != 0 else 1.0
         self._out_zero_point = out_quant[1]
 
-        print("🧠 Edge Impulse wakeword model loaded")
-        print(f"   Input  shape : {self.input_shape}")
-        print(f"   Input  dtype : {self.input_dtype}")
-        print(f"   In  scale    : {self._in_scale}  zero_pt: {self._in_zero_point}")
-        print(f"   Output dtype : {self.output_details[0]['dtype']}")
-        print(f"   Out scale    : {self._out_scale}  zero_pt: {self._out_zero_point}")
-        print(f"   Wakeword cls : {self.wakeword_class} (0=hey_hali,1=noise,2=unknown)")
-        print(f"   Conf thresh  : {self.confidence_threshold}")
-        print(f"   Conf margin  : {self.confidence_margin}")
-        print(f"   Frame samples: {self.frame_samples}")
-        print(f"   Hop   samples: {self.hop_samples}")
+        # Input quantization
+        in_quant            = self.input_details[0].get("quantization", (1.0, 0))
+        self._in_scale      = in_quant[0] if in_quant[0] != 0 else 1.0
+        self._in_zero_point = in_quant[1]
 
-    # ── Audio prep ────────────────────────────────────────────────
-    def _prepare_audio(self, audio: np.ndarray) -> np.ndarray:
-        """Convert float32 audio → quantized int8 using model's own scale/zero_point."""
-        if len(audio) < self.input_len:
-            audio = np.pad(audio, (0, self.input_len - len(audio)))
+        print("🧠 Edge Impulse Transfer Learning wakeword model loaded")
+        print(f"   Input  shape      : {self.input_shape}")
+        print(f"   Input  dtype      : {self.input_dtype}")
+        print(f"   In  scale/zero_pt : {self._in_scale} / {self._in_zero_point}")
+        print(f"   Out scale/zero_pt : {self._out_scale} / {self._out_zero_point}")
+        print(f"   Wakeword class    : {self.wakeword_class} (0=hey_hali,1=noise,2=unknown)")
+        print(f"   Conf threshold    : {self.confidence_threshold}")
+        print(f"   Conf margin       : {self.confidence_margin}")
+        print(f"   Frame samples     : {self.frame_samples}  ({frame_duration*1000:.0f}ms)")
+        print(f"   Hop   samples     : {self.hop_samples}  ({hop_duration*1000:.0f}ms)")
+        print(f"   MFE input len     : {self.input_len} features")
+
+    def _prepare_features(self, audio: np.ndarray) -> np.ndarray:
+        features = compute_mfe(audio, samplerate=self.samplerate)
+
+        if len(features) < self.input_len:
+            features = np.pad(features, (0, self.input_len - len(features)))
         else:
-            audio = audio[:self.input_len]
+            features = features[:self.input_len]
 
         if self.input_dtype == np.int8:
-            # Correct quantization: q = round(x / scale) + zero_point
-            quantized = np.round(audio / self._in_scale) + self._in_zero_point
-            audio = np.clip(quantized, -128, 127).astype(np.int8)
+            quantized = np.round(features / self._in_scale) + self._in_zero_point
+            features  = np.clip(quantized, -128, 127).astype(np.int8)
         elif self.input_dtype == np.int16:
-            audio = (audio * 32767.0).clip(-32768, 32767).astype(np.int16)
+            features = (features * 32767.0).clip(-32768, 32767).astype(np.int16)
         else:
-            audio = audio.astype(self.input_dtype)
+            features = features.astype(self.input_dtype)
 
-        return audio.reshape(1, -1)
+        return features.reshape(1, -1)
 
-    # ── Inference + dequantize ────────────────────────────────────
     def _infer(self, audio_window: np.ndarray) -> np.ndarray:
-        """Run inference and return dequantized float probabilities (0.0–1.0)."""
-        features = self._prepare_audio(audio_window)
+        """Returns softmax probabilities [0.0–1.0] for each class."""
+        features = self._prepare_features(audio_window)
         self.interpreter.set_tensor(self.input_index, features)
         self.interpreter.invoke()
         raw = self.interpreter.get_tensor(self.output_index)[0]
-        
-        print(f"RAW int8 output: {raw}")   # add this line
-        # Dequantize output: real_value = scale * (quantized - zero_point)
-        dequantized = self._out_scale * (raw.astype(np.float32) - self._out_zero_point)
 
-        # Softmax → probabilities summing to 1.0
+        dequantized = self._out_scale * (raw.astype(np.float32) - self._out_zero_point)
         e = np.exp(dequantized - np.max(dequantized))
         return e / e.sum()
 
-    def _reset_detection_state(self):
-        self._trigger_count = 0
-        self._wake_history.clear()
-        self._prediction_history.clear()
-        self._consecutive_wake_frames = 0
-        self._frames_seen = 0
-
-    # ── Main loop ─────────────────────────────────────────────────
     def wait_for_wake_word(self):
         print("🎧 Listening for wake word...")
 
+        # Discard buffered audio from speaker output
+        warmup_end = time.time() + 2.0
         with sd.InputStream(
             channels=1,
             samplerate=self.samplerate,
@@ -136,6 +192,8 @@ class EdgeWakeWordDetector:
             device=self.device,
             blocksize=self.hop_samples,
         ) as stream:
+            while time.time() < warmup_end:
+                stream.read(self.hop_samples)
             while True:
                 chunk, _ = stream.read(self.hop_samples)
                 chunk = chunk[:, 0]
@@ -146,17 +204,15 @@ class EdgeWakeWordDetector:
 
                 # Energy gate — skip silence
                 rms = np.sqrt(np.mean(self._buffer ** 2))
-                #if rms < self.energy_threshold:
-                #    self._trigger_count = 0
-                #    self._consecutive_wake_frames = 0
-                #    continue
+                if rms < self.energy_threshold:
+                    continue
 
                 # Cooldown gate
                 now = time.time()
                 if now - self._last_detect_time < self.cooldown_seconds:
                     continue
 
-                # Inference → probabilities
+                # Run inference
                 probs = self._infer(self._buffer)
 
                 wake_score    = float(probs[self.wakeword_class])
@@ -165,49 +221,16 @@ class EdgeWakeWordDetector:
                 predicted_cls = int(np.argmax(probs))
                 margin        = wake_score - best_other
 
-                self._frames_seen += 1
-                self._wake_history.append(wake_score)
-                self._prediction_history.append(predicted_cls)
+                print(f"Probs    : {np.round(probs, 3)}  (hey_hali | noise | unknown)")
+                print(f"Wake     : {wake_score:.3f}  best_other: {best_other:.3f}  margin: {margin:.3f}  RMS: {rms:.4f}")
+                print("----")
 
-                smoothed_wake = float(np.mean(self._wake_history))
-                wake_votes    = sum(1 for p in self._prediction_history if p == self.wakeword_class)
-
-                is_strong_wake = (
+                # Simple single frame detection — no streak, no voting
+                if (
                     predicted_cls == self.wakeword_class
                     and wake_score >= self.confidence_threshold
                     and margin >= self.confidence_margin
-                )
-
-                if is_strong_wake:
-                    self._consecutive_wake_frames += 1
-                else:
-                    self._consecutive_wake_frames = 0
-
-                print(f"Probs      : {np.round(probs, 3)}  (hey_hali | noise | unknown)")
-                print(f"Wake score : {wake_score:.3f}  best_other: {best_other:.3f}  margin: {margin:.3f}")
-                print(f"Predicted  : {predicted_cls}  smoothed: {smoothed_wake:.3f}  votes: {wake_votes}")
-                print(f"Streak     : {self._consecutive_wake_frames}  RMS: {rms:.4f}")
-                print("----")
-
-                enough_history = len(self._prediction_history) >= 3
-                majority_wake  = wake_votes >= 2
-                strong_streak  = self._consecutive_wake_frames >= 2
-                past_warmup    = self._frames_seen >= self._warmup_frames
-
-                if (
-                    past_warmup
-                    and enough_history
-                    and majority_wake
-                    and strong_streak
-                    and is_strong_wake
                 ):
-                    self._trigger_count += 1
-                    print(f"🔔 Trigger count: {self._trigger_count}/{self.debounce_frames}")
-                else:
-                    self._trigger_count = 0
-
-                if self._trigger_count >= self.debounce_frames:
                     print("✅ Wake word detected!")
                     self._last_detect_time = time.time()
-                    self._reset_detection_state()
                     return
