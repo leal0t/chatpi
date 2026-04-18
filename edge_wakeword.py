@@ -1,3 +1,4 @@
+import gc
 import time
 
 import numpy as np
@@ -84,6 +85,9 @@ def compute_mfe(
     # Fixed normalization — preserves energy differences between speech and silence
     energy = np.clip((energy + 12.0) / 12.0, 0.0, 1.0)
 
+    # Free intermediate arrays before returning
+    del frames, mag, power, fbank, indices
+
     return energy.flatten().astype(np.float32)
 
 
@@ -99,6 +103,7 @@ class EdgeWakeWordDetector:
         cooldown_seconds: float = 2.0,      # pause after detection
         confidence_threshold: float = 0.40, # minimum hey_hali score
         confidence_margin: float = 0.10,    # must beat next class by this
+        max_misses: int = 6,                # reset after this many non-detections
         device: int | None = None,
     ):
         self.samplerate           = samplerate
@@ -111,6 +116,7 @@ class EdgeWakeWordDetector:
         self.cooldown_seconds     = cooldown_seconds
         self.confidence_threshold = confidence_threshold
         self.confidence_margin    = confidence_margin
+        self.max_misses           = max_misses
         self.device               = device
 
         self._last_detect_time = 0.0
@@ -150,6 +156,7 @@ class EdgeWakeWordDetector:
         print(f"   Frame samples     : {self.frame_samples}  ({frame_duration*1000:.0f}ms)")
         print(f"   Hop   samples     : {self.hop_samples}  ({hop_duration*1000:.0f}ms)")
         print(f"   MFE input len     : {self.input_len} features")
+        print(f"   Max misses        : {self.max_misses}")
 
     def _prepare_features(self, audio: np.ndarray) -> np.ndarray:
         features = compute_mfe(audio, samplerate=self.samplerate)
@@ -178,13 +185,20 @@ class EdgeWakeWordDetector:
 
         dequantized = self._out_scale * (raw.astype(np.float32) - self._out_zero_point)
         e = np.exp(dequantized - np.max(dequantized))
-        return e / e.sum()
+        probs = e / e.sum()
+
+        # Free inference temporaries immediately
+        del features, raw, dequantized, e
+
+        return probs
 
     def wait_for_wake_word(self):
         print("🎧 Listening for wake word...")
 
         # Discard buffered audio from speaker output
         warmup_end = time.time() + 2.0
+        miss_count = 0
+
         with sd.InputStream(
             channels=1,
             samplerate=self.samplerate,
@@ -225,7 +239,11 @@ class EdgeWakeWordDetector:
                 print(f"Wake     : {wake_score:.3f}  best_other: {best_other:.3f}  margin: {margin:.3f}  RMS: {rms:.4f}")
                 print("----")
 
-                # Simple single frame detection — no streak, no voting
+                # GC + rest after every inference
+                gc.collect()
+                time.sleep(0.25)
+
+                # Wake word detected — return to main loop
                 if (
                     predicted_cls == self.wakeword_class
                     and wake_score >= self.confidence_threshold
@@ -233,4 +251,10 @@ class EdgeWakeWordDetector:
                 ):
                     print("✅ Wake word detected!")
                     self._last_detect_time = time.time()
-                    return
+                    return True
+
+                # Count non-hey-hali results and reset after max_misses
+                miss_count += 1
+                if miss_count >= self.max_misses:
+                    print(f"🔄 {self.max_misses} misses — resetting listener...\n")
+                    return False

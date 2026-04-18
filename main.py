@@ -171,22 +171,24 @@ def main():
 		energy_threshold=0.012,
 		wakeword_class=0,
 		cooldown_seconds=2.0,
-		confidence_threshold=0.50,
+		confidence_threshold=0.40,
 		confidence_margin=0.15,
+		max_misses=15,
 		device=None,
 	)
 
 	print("Hali is ready on the Pi Zero!")
 	print("Say 'Hey Hali' to wake her up. Ctrl+C to quit.\n")
 
-	while True:
-		try:
-			wake.wait_for_wake_word()
-			conversation_loop(say_full_greeting=True)
-			time.sleep(4.0)
-		except KeyboardInterrupt:
-			print("\n👋 Exiting Hali. Goodbye!")
-			break
+	try:
+		while True:
+			detected = wake.wait_for_wake_word()
+			if detected:
+				conversation_loop(say_full_greeting=True)
+				time.sleep(4.0)
+			# If not detected (max misses hit), loop back and try again
+	except KeyboardInterrupt:
+		print("\n👋 Exiting Hali. Goodbye!")
 
 
 if __name__ == "__main__":
