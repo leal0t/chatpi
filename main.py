@@ -172,7 +172,7 @@ def main():
 		wakeword_class=0,
 		cooldown_seconds=2.0,
 		confidence_threshold=0.40,
-		confidence_margin=0.15,
+		confidence_margin=0.10,
 		max_misses=15,
 		device=None,
 	)
