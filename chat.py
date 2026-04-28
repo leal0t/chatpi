@@ -57,7 +57,7 @@ SYSTEM_PROMPT = (
 
 def ask_chatgpt(conversation_history: list[dict]) -> str:
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model="gpt-4o-mini-2024-07-18",
         input=[
             {
                 "role": "system",
