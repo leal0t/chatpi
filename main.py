@@ -1,3 +1,4 @@
+import gc
 import time
 import re
 
@@ -168,12 +169,13 @@ def main():
 		samplerate=16000,
 		frame_duration=1.0,
 		hop_duration=0.20,
-		energy_threshold=0.012,
+		energy_threshold=0.020,
 		wakeword_class=0,
 		cooldown_seconds=2.0,
-		confidence_threshold=0.40,
-		confidence_margin=0.10,
+		confidence_threshold=0.30,
+		confidence_margin=0.08,
 		max_misses=10,
+		rest_seconds=5.0,
 		device=None,
 	)
 
@@ -182,11 +184,13 @@ def main():
 
 	try:
 		while True:
-			detected = wake.wait_for_wake_word()
-			if detected:
+			wake.wait_for_wake_word()
+			try:
 				conversation_loop(say_full_greeting=True)
-				time.sleep(4.0)
-			# If not detected (max misses hit), loop back and try again
+			except Exception as e:
+				print(f"⚠️  Conversation error: {e}")
+			gc.collect()
+			time.sleep(4.0)
 	except KeyboardInterrupt:
 		print("\n👋 Exiting Hali. Goodbye!")
 

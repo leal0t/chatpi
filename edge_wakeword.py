@@ -3,7 +3,10 @@ import time
 
 import numpy as np
 import sounddevice as sd
-import tflite_runtime.interpreter as tflite
+try:
+    import tflite_runtime.interpreter as tflite
+except ModuleNotFoundError:
+    from ai_edge_litert import interpreter as tflite
 
 
 # ============================================================
@@ -103,7 +106,8 @@ class EdgeWakeWordDetector:
         cooldown_seconds: float = 2.0,      # pause after detection
         confidence_threshold: float = 0.40, # minimum hey_hali score
         confidence_margin: float = 0.10,    # must beat next class by this
-        max_misses: int = 6,                # reset after this many non-detections
+        max_misses: int = 6,                # clear buffer after this many non-detections
+        rest_seconds: float = 30.0,         # pause after buffer clear before resuming
         device: int | None = None,
     ):
         self.samplerate           = samplerate
@@ -117,6 +121,7 @@ class EdgeWakeWordDetector:
         self.confidence_threshold = confidence_threshold
         self.confidence_margin    = confidence_margin
         self.max_misses           = max_misses
+        self.rest_seconds         = rest_seconds
         self.device               = device
 
         self._last_detect_time = 0.0
@@ -195,66 +200,110 @@ class EdgeWakeWordDetector:
     def wait_for_wake_word(self):
         print("🎧 Listening for wake word...")
 
-        # Discard buffered audio from speaker output
-        warmup_end = time.time() + 2.0
-        miss_count = 0
+        while True:
+            try:
+                with sd.InputStream(
+                    channels=1,
+                    samplerate=self.samplerate,
+                    dtype="float32",
+                    device=self.device,
+                    blocksize=self.hop_samples,
+                ) as stream:
+                    # Discard buffered audio from speaker output
+                    warmup_end = time.time() + 2.0
+                    while time.time() < warmup_end:
+                        stream.read(self.hop_samples)
 
-        with sd.InputStream(
-            channels=1,
-            samplerate=self.samplerate,
-            dtype="float32",
-            device=self.device,
-            blocksize=self.hop_samples,
-        ) as stream:
-            while time.time() < warmup_end:
-                stream.read(self.hop_samples)
-            while True:
-                chunk, _ = stream.read(self.hop_samples)
-                chunk = chunk[:, 0]
+                    # Fill buffer with real audio so first inference never sees zeros
+                    refill_hops = (self.frame_samples // self.hop_samples) + 2
+                    for _ in range(refill_hops):
+                        chunk, _ = stream.read(self.hop_samples)
+                        chunk = chunk[:, 0]
+                        self._buffer[:-self.hop_samples] = self._buffer[self.hop_samples:]
+                        self._buffer[-self.hop_samples:] = chunk
 
-                # Slide buffer forward
-                self._buffer[:-self.hop_samples] = self._buffer[self.hop_samples:]
-                self._buffer[-self.hop_samples:] = chunk
+                    miss_count = 0
+                    consecutive_count = 0
+                    while True:
+                        chunk, _ = stream.read(self.hop_samples)
+                        chunk = chunk[:, 0]
 
-                # Energy gate — skip silence
-                rms = np.sqrt(np.mean(self._buffer ** 2))
-                if rms < self.energy_threshold:
-                    continue
+                        # Slide buffer forward
+                        self._buffer[:-self.hop_samples] = self._buffer[self.hop_samples:]
+                        self._buffer[-self.hop_samples:] = chunk
 
-                # Cooldown gate
-                now = time.time()
-                if now - self._last_detect_time < self.cooldown_seconds:
-                    continue
+                        # Energy gate — skip silence
+                        rms = np.sqrt(np.mean(self._buffer ** 2))
+                        if rms < self.energy_threshold:
+                            miss_count = 0
+                            consecutive_count = 0
+                            continue
 
-                # Run inference
-                probs = self._infer(self._buffer)
+                        # Cooldown gate
+                        now = time.time()
+                        if now - self._last_detect_time < self.cooldown_seconds:
+                            continue
 
-                wake_score    = float(probs[self.wakeword_class])
-                other_probs   = np.delete(probs, self.wakeword_class)
-                best_other    = float(np.max(other_probs))
-                predicted_cls = int(np.argmax(probs))
-                margin        = wake_score - best_other
+                        # Run inference
+                        probs = self._infer(self._buffer)
 
-                print(f"Probs    : {np.round(probs, 3)}  (hey_hali | noise | unknown)")
-                print(f"Wake     : {wake_score:.3f}  best_other: {best_other:.3f}  margin: {margin:.3f}  RMS: {rms:.4f}")
-                print("----")
+                        wake_score    = float(probs[self.wakeword_class])
+                        other_probs   = np.delete(probs, self.wakeword_class)
+                        best_other    = float(np.max(other_probs))
+                        predicted_cls = int(np.argmax(probs))
+                        margin        = wake_score - best_other
 
-                # GC + rest after every inference
-                gc.collect()
-                time.sleep(0.25)
+                        print(f"Probs    : {np.round(probs, 3)}  (hey_hali | noise | unknown)")
+                        print(f"Wake     : {wake_score:.3f}  best_other: {best_other:.3f}  margin: {margin:.3f}  RMS: {rms:.4f}  consec: {consecutive_count}")
+                        print("----")
 
-                # Wake word detected — return to main loop
-                if (
-                    predicted_cls == self.wakeword_class
-                    and wake_score >= self.confidence_threshold
-                    and margin >= self.confidence_margin
-                ):
-                    print("✅ Wake word detected!")
-                    self._last_detect_time = time.time()
-                    return True
+                        # GC + rest after every inference
+                        gc.collect()
+                        time.sleep(0.25)
 
-                # Count non-hey-hali results and reset after max_misses
-                miss_count += 1
-                if miss_count >= self.max_misses:
-                    print(f"🔄 {self.max_misses} misses — resetting listener...\n")
-                    return False
+                        # Require 2 consecutive windows above threshold — filters transient clicks/noise
+                        if (
+                            predicted_cls == self.wakeword_class
+                            and wake_score >= self.confidence_threshold
+                            and margin >= self.confidence_margin
+                        ):
+                            consecutive_count += 1
+                            if consecutive_count >= 2:
+                                print("✅ Wake word detected!")
+                                self._last_detect_time = time.time()
+                                consecutive_count = 0
+                                return True
+                            print(f"🔔 Candidate ({consecutive_count}/2)...")
+                        else:
+                            consecutive_count = 0
+
+                        # NOISE = model is confident nothing is happening, reset like silence
+                        # UNKNOWN = ambiguous speech, count as a miss
+                        if predicted_cls == 1:  # noise class
+                            miss_count = 0
+                            continue
+
+                        # On repeated unknown misses, rest then properly refill buffer
+                        miss_count += 1
+                        if miss_count >= self.max_misses:
+                            print(f"😴 {self.max_misses} misses — resting {self.rest_seconds:.0f}s...\n")
+                            miss_count = 0
+                            gc.collect()
+                            time.sleep(self.rest_seconds)
+                            # Drain audio that accumulated in the device buffer during sleep
+                            drain_hops = int(self.rest_seconds / self.hop_duration) + 5
+                            for _ in range(drain_hops):
+                                stream.read(self.hop_samples)
+                            # Now fill buffer with fresh audio
+                            refill_hops = (self.frame_samples // self.hop_samples) + 2
+                            for _ in range(refill_hops):
+                                chunk, _ = stream.read(self.hop_samples)
+                                chunk = chunk[:, 0]
+                                self._buffer[:-self.hop_samples] = self._buffer[self.hop_samples:]
+                                self._buffer[-self.hop_samples:] = chunk
+                            consecutive_count = 0
+                            print("🎧 Listening for wake word...")
+
+            except Exception as e:
+                print(f"⚠️  Audio stream error: {e} — restarting listener in 1s...")
+                time.sleep(1.0)
