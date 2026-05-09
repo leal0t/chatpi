@@ -261,21 +261,26 @@ class EdgeWakeWordDetector:
                         gc.collect()
                         time.sleep(0.25)
 
-                        # Require 2 consecutive windows above threshold — filters transient clicks/noise
-                        if (
+                        # First window needs threshold + margin (strong signal)
+                        # Second window just needs threshold (confirms word still present)
+                        above_threshold = (
                             predicted_cls == self.wakeword_class
                             and wake_score >= self.confidence_threshold
-                            and margin >= self.confidence_margin
-                        ):
-                            consecutive_count += 1
-                            if consecutive_count >= 2:
+                        )
+                        if consecutive_count == 0:
+                            if above_threshold and margin >= self.confidence_margin:
+                                consecutive_count = 1
+                                print("🔔 Candidate (1/2)...")
+                            else:
+                                consecutive_count = 0
+                        else:
+                            if above_threshold:
                                 print("✅ Wake word detected!")
                                 self._last_detect_time = time.time()
                                 consecutive_count = 0
                                 return True
-                            print(f"🔔 Candidate ({consecutive_count}/2)...")
-                        else:
-                            consecutive_count = 0
+                            else:
+                                consecutive_count = 0
 
                         # NOISE = model is confident nothing is happening, reset like silence
                         # UNKNOWN = ambiguous speech, count as a miss

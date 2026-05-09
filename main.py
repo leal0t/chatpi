@@ -13,7 +13,6 @@ SLEEP_ACK = "Okay. Going back to sleep.  me! me! me! me!"
 GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 
 SILENCE_TIMEOUT_SECONDS = 10
-RECORD_SECONDS = 6
 SILENCE_RMS_THRESHOLD = 0.005
 MAX_CONVERSATION_TURNS = 12
 
@@ -21,7 +20,6 @@ GOODBYE_PATTERNS = [
 	r"\bgoodbye\b",
 	r"\bbye\b",
 	r"\bgo to sleep\b",
-	r"\bsleep\b",
 	r"\bstop listening\b",
 	r"\bcancel\b",
 	r"\bthat's all\b",
@@ -73,11 +71,17 @@ IGNORE_PHRASES = [
 
 def is_goodbye(text: str) -> bool:
 	t = (text or "").strip().lower()
+	if re.search(r"\bgo to sleep\b", t):
+		return True
+	if len(t.split()) > 10:
+		return False
 	return any(re.search(p, t) for p in GOODBYE_PATTERNS)
 
 
 def is_greeting(text: str) -> bool:
 	t = (text or "").lower()
+	if len(t.split()) > 8:
+		return False
 	GREETING_WORDS = [
 		"hello", "hi", "hey",
 		"how are you", "how's it going",
@@ -103,7 +107,7 @@ def conversation_loop(say_full_greeting: bool = True):
 
 	while True:
 		print("🎙 Listening for your question (or I'll nap soon)...")
-		audio_file, rms = record_audio(RECORD_SECONDS)
+		audio_file, rms = record_audio()
 
 		now = time.monotonic()
 
