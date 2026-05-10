@@ -5,7 +5,7 @@ import numpy as np
 
 def record_audio(filename="input.wav",
                  samplerate=16000,
-                 silence_duration=3.0,
+                 silence_duration=2.0,
                  max_duration=30.0):
     """
     Record until 1 second of silence after speech, or max_duration seconds.
@@ -30,7 +30,7 @@ def record_audio(filename="input.wav",
             noise_samples.append(float(np.sqrt(np.mean(chunk[:, 0] ** 2))))
         noise_floor = float(np.mean(noise_samples))
         # Speech threshold: 3x the noise floor, minimum 0.005
-        speech_threshold = max(noise_floor * 2.0, 0.005)
+        speech_threshold = max(noise_floor * 2.5, 0.005)
         print(f"  noise floor: {noise_floor:.5f}  speech threshold: {speech_threshold:.5f}")
 
         frames         = []
