@@ -109,6 +109,7 @@ class EdgeWakeWordDetector:
         max_misses: int = 6,                # clear buffer after this many non-detections
         rest_seconds: float = 30.0,         # pause after buffer clear before resuming
         device: int | None = None,
+        lcd=None,                           # optional LCDDisplay instance
     ):
         self.samplerate           = samplerate
         self.frame_duration       = frame_duration
@@ -123,9 +124,12 @@ class EdgeWakeWordDetector:
         self.max_misses           = max_misses
         self.rest_seconds         = rest_seconds
         self.device               = device
+        self.lcd                  = lcd
 
         self._last_detect_time = 0.0
         self._buffer           = np.zeros(self.frame_samples, dtype=np.float32)
+        self._manual_wake      = False   # set True by manual_wake() to bypass detection
+        self._stop_requested   = False   # set True by request_stop() to exit loop
 
         # Load model
         self.interpreter = tflite.Interpreter(model_path=model_path)
@@ -163,6 +167,14 @@ class EdgeWakeWordDetector:
         print(f"   MFE input len     : {self.input_len} features")
         print(f"   Max misses        : {self.max_misses}")
 
+    def manual_wake(self):
+        """Signal wait_for_wake_word() to return immediately as if detected."""
+        self._manual_wake = True
+
+    def request_stop(self):
+        """Signal wait_for_wake_word() to exit the loop and return False."""
+        self._stop_requested = True
+
     def _prepare_features(self, audio: np.ndarray) -> np.ndarray:
         features = compute_mfe(audio, samplerate=self.samplerate)
 
@@ -198,9 +210,24 @@ class EdgeWakeWordDetector:
         return probs
 
     def wait_for_wake_word(self):
+        """
+        Block until the wake word is heard, manual_wake() is called, or
+        request_stop() is called.  Returns True on wake, False on stop.
+        """
         print("🎧 Listening for wake word...")
+        if self.lcd:
+            self.lcd.show_status("LISTENING")
 
         while True:
+            # Check for stop/manual-wake before opening the stream
+            if self._stop_requested:
+                self._stop_requested = False
+                return False
+            if self._manual_wake:
+                self._manual_wake = False
+                print("⌨️  Manual wake via button")
+                return True
+
             try:
                 with sd.InputStream(
                     channels=1,
@@ -225,6 +252,15 @@ class EdgeWakeWordDetector:
                     miss_count = 0
                     consecutive_count = 0
                     while True:
+                        # Check flags each iteration so buttons respond promptly
+                        if self._stop_requested:
+                            self._stop_requested = False
+                            return False
+                        if self._manual_wake:
+                            self._manual_wake = False
+                            print("⌨️  Manual wake via button")
+                            return True
+
                         chunk, _ = stream.read(self.hop_samples)
                         chunk = chunk[:, 0]
 
@@ -271,21 +307,32 @@ class EdgeWakeWordDetector:
                             if above_threshold and margin >= self.confidence_margin:
                                 consecutive_count = 1
                                 print("🔔 Candidate (1/2)...")
+                                if self.lcd:
+                                    self.lcd.show_status("CANDIDATE", wake_score)
                             else:
                                 consecutive_count = 0
+                                if self.lcd:
+                                    label = "MISS" if predicted_cls != self.wakeword_class else "LISTENING"
+                                    self.lcd.show_status(label, wake_score)
                         else:
                             if above_threshold:
                                 print("✅ Wake word detected!")
                                 self._last_detect_time = time.time()
                                 consecutive_count = 0
+                                if self.lcd:
+                                    self.lcd.show_status("DETECTED", wake_score)
                                 return True
                             else:
                                 consecutive_count = 0
+                                if self.lcd:
+                                    self.lcd.show_status("MISS", wake_score)
 
                         # NOISE = model is confident nothing is happening, reset like silence
                         # UNKNOWN = ambiguous speech, count as a miss
                         if predicted_cls == 1:  # noise class
                             miss_count = 0
+                            if self.lcd:
+                                self.lcd.show_status("LISTENING")
                             continue
 
                         # On repeated unknown misses, rest then properly refill buffer
@@ -293,6 +340,8 @@ class EdgeWakeWordDetector:
                         if miss_count >= self.max_misses:
                             print(f"😴 {self.max_misses} misses — resting {self.rest_seconds:.0f}s...\n")
                             miss_count = 0
+                            if self.lcd:
+                                self.lcd.show_status("SLEEPING")
                             gc.collect()
                             time.sleep(self.rest_seconds)
                             # Drain audio that accumulated in the device buffer during sleep
@@ -308,6 +357,8 @@ class EdgeWakeWordDetector:
                                 self._buffer[-self.hop_samples:] = chunk
                             consecutive_count = 0
                             print("🎧 Listening for wake word...")
+                            if self.lcd:
+                                self.lcd.show_status("LISTENING")
 
             except Exception as e:
                 print(f"⚠️  Audio stream error: {e} — restarting listener in 1s...")

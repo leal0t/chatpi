@@ -91,21 +91,32 @@ def is_greeting(text: str) -> bool:
 	return any(w in t for w in GREETING_WORDS)
 
 
-def conversation_loop(say_full_greeting: bool = True):
+def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None):
 	conversation_history = []
 	first_turn = True
 
 	print("🗣 Hali is awake. You don't need the wake word now.")
 	print("Just talk. Say 'goodbye' (or 'go to sleep') to end.\n")
 
+	if lcd:
+		lcd.show_face(mouth_open=False)
+
 	if say_full_greeting:
-		speak_audio(WAKE_GREETING)
+		speak_audio(WAKE_GREETING, lcd=lcd)
 	else:
-		speak_audio(WAKE_SHORT_ACK)
+		speak_audio(WAKE_SHORT_ACK, lcd=lcd)
+
+	if lcd:
+		lcd.show_face(mouth_open=False)
 
 	last_activity = time.monotonic()
 
 	while True:
+		if stop_event and stop_event.is_set():
+			stop_event.clear()
+			print("🔴 Stopped mid-conversation.")
+			return
+
 		print("🎙 Listening for your question (or I'll nap soon)...")
 		audio_file, rms = record_audio()
 
@@ -145,14 +156,16 @@ def conversation_loop(say_full_greeting: bool = True):
 
 		if first_turn and is_greeting(text):
 			print("👋 Greeting phrase detected (first turn).")
-			speak_audio(GREET_ACK)
+			speak_audio(GREET_ACK, lcd=lcd)
+			if lcd:
+				lcd.show_face(mouth_open=False)
 			last_activity = time.monotonic()
 			first_turn = False
 			continue
 
 		if is_goodbye(text):
 			print("👋 Goodbye phrase detected — sleeping.\n")
-			speak_audio(SLEEP_ACK)
+			speak_audio(SLEEP_ACK, lcd=lcd)
 			return
 
 		first_turn = False
@@ -163,11 +176,43 @@ def conversation_loop(say_full_greeting: bool = True):
 		conversation_history.append({"role": "assistant", "content": response})
 		conversation_history = conversation_history[-MAX_CONVERSATION_TURNS:]
 
-		speak_audio(response)
+		speak_audio(response, lcd=lcd)
+		if lcd:
+			lcd.show_face(mouth_open=False)
 		last_activity = time.monotonic()
 
 
 def main():
+	import threading
+	start_event = threading.Event()  # set by KEY1
+	stop_event  = threading.Event()  # set by KEY2
+
+	# Try to initialise the LCD.  If hardware isn't present we run headless.
+	lcd  = None
+	wake = None
+	try:
+		from lcd import LCDDisplay
+
+		def on_start():
+			print("🟢 KEY1: start")
+			start_event.set()
+
+		def on_stop():
+			print("🔴 KEY2: stop")
+			stop_event.set()
+			if wake is not None:
+				wake.request_stop()
+
+		def on_wake():
+			print("⌨️  KEY3: manual wake")
+			if wake is not None:
+				wake.manual_wake()
+
+		lcd = LCDDisplay(on_start=on_start, on_stop=on_stop, on_wake=on_wake)
+		print("🖥  LCD initialised")
+	except Exception as e:
+		print(f"⚠️  LCD not available ({e}) — running headless")
+
 	wake = EdgeWakeWordDetector(
 		model_path="/home/pi/chatpi/edge_wakeword/hey_hali.tflite",
 		samplerate=16000,
@@ -181,22 +226,50 @@ def main():
 		max_misses=10,
 		rest_seconds=5.0,
 		device=None,
+		lcd=lcd,
 	)
 
-	print("Hali is ready on the Pi Zero!")
-	print("Say 'Hey Hali' to wake her up. Ctrl+C to quit.\n")
+	print("Hali is ready on the Pi 4!")
+	print("KEY1=start  KEY2=stop  KEY3=manual wake  Ctrl+C=quit\n")
+
+	# ── Wait for KEY1 before doing anything ───────────────────────────────
+	if lcd:
+		lcd.show_status("SLEEPING", detail="Press KEY1 to start")
+	print("Press KEY1 to start Hali...")
+	start_event.wait()
+	start_event.clear()
+	print("Starting...\n")
 
 	try:
 		while True:
-			wake.wait_for_wake_word()
+			detected = wake.wait_for_wake_word()
+
+			if not detected:
+				# KEY2 stop — go dark and wait for KEY1 or KEY3
+				print("⏹  Stopped. Press KEY1 or KEY3 to restart.")
+				if lcd:
+					lcd.show_status("SLEEPING", detail="KEY1=restart  KEY3=wake")
+				while not start_event.is_set() and not wake._manual_wake:
+					time.sleep(0.1)
+				start_event.clear()
+				print("Restarting...\n")
+				continue
+
 			try:
-				conversation_loop(say_full_greeting=True)
+				conversation_loop(lcd=lcd, say_full_greeting=True, stop_event=stop_event)
 			except Exception as e:
 				print(f"⚠️  Conversation error: {e}")
+
+			if lcd:
+				lcd.show_status("LISTENING")
 			gc.collect()
 			time.sleep(4.0)
+
 	except KeyboardInterrupt:
 		print("\n👋 Exiting Hali. Goodbye!")
+	finally:
+		if lcd:
+			lcd.close()
 
 
 if __name__ == "__main__":

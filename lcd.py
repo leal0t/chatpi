@@ -64,9 +64,12 @@ class LCDDisplay:
         self._gpio_init()
         self._spi_init()
         self._display_init()
+        self._load_face_images()
 
         self._thread = threading.Thread(target=self._render_loop, daemon=True)
         self._thread.start()
+        self._btn_thread = threading.Thread(target=self._button_loop, daemon=True)
+        self._btn_thread.start()
 
     # ── Hardware init ──────────────────────────────────────────────────────
 
@@ -78,9 +81,6 @@ class LCDDisplay:
         GPIO.output(BL_PIN, GPIO.HIGH)
         for pin in (KEY1_PIN, KEY2_PIN, KEY3_PIN):
             GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(KEY1_PIN, GPIO.FALLING, callback=self._cb_start, bouncetime=300)
-        GPIO.add_event_detect(KEY2_PIN, GPIO.FALLING, callback=self._cb_stop,  bouncetime=300)
-        GPIO.add_event_detect(KEY3_PIN, GPIO.FALLING, callback=self._cb_wake,  bouncetime=300)
 
     def _spi_init(self):
         self.spi = spidev.SpiDev()
@@ -113,6 +113,7 @@ class LCDDisplay:
 
     def _flush(self, img: Image.Image):
         """Convert PIL RGB image → RGB565 big-endian and push to display."""
+        img  = img.rotate(90)
         arr  = np.array(img, dtype=np.uint16)
         r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
         px   = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
@@ -192,52 +193,41 @@ class LCDDisplay:
         draw.text((64, 119), "1=start  2=stop  3=wake", font=_fnt_sm, fill=(52, 52, 78), anchor="mm")
         return img
 
+    def _load_face_images(self):
+        base = "/home/pi/chatpi/"
+        size = (WIDTH, HEIGHT)
+        try:
+            self._img_normal = Image.open(base + "face_base.png").convert("RGB").resize(size, Image.LANCZOS)
+            self._img_blink  = Image.open(base + "eyes_closed.png").convert("RGB").resize(size, Image.LANCZOS)
+            self._img_talk   = Image.open(base + "mouth_open.png").convert("RGB").resize(size, Image.LANCZOS)
+            print("🖼  Face images loaded")
+        except FileNotFoundError as e:
+            print(f"[LCD] Face image missing ({e}) — using built-in face")
+            self._img_normal = self._img_blink = self._img_talk = None
+
     def _draw_face(self, eyes_open: bool, mouth_open: bool) -> Image.Image:
-        img  = Image.new("RGB", (WIDTH, HEIGHT), _BG)
-        draw = ImageDraw.Draw(img)
+        if self._img_normal:
+            if mouth_open:
+                return self._img_talk
+            if not eyes_open:
+                return self._img_blink
+            return self._img_normal
 
-        # Neck (skin, behind everything)
-        draw.rectangle([(54, 100), (74, 128)], fill=_SKIN)
+        # Fallback: plain coloured square if images missing
+        return Image.new("RGB", (WIDTH, HEIGHT), _BG)
 
-        # Face oval
-        draw.ellipse([(20, 14), (108, 112)], fill=_SKIN)
+    # ── Button polling thread ──────────────────────────────────────────────
 
-        # Hair — crown then flowing sides (drawn over face edges)
-        draw.ellipse([(8,  -30), (120,  74)], fill=_HAIR)  # crown
-        draw.ellipse([(-4,  32), ( 36, 128)], fill=_HAIR)  # left side
-        draw.ellipse([(92,  32), (132, 128)], fill=_HAIR)  # right side
-
-        # Eyebrows
-        draw.line([(33, 54), (57, 49)], fill=_BROW, width=2)
-        draw.line([(71, 49), (95, 54)], fill=_BROW, width=2)
-
-        # Eyes
-        if eyes_open:
-            for ex in (32, 70):
-                draw.ellipse([(ex,     58), (ex + 24, 73)], fill=_WHITE)
-                draw.ellipse([(ex + 4, 61), (ex + 20, 71)], fill=_IRIS)
-                draw.ellipse([(ex + 8, 63), (ex + 16, 70)], fill=_PUPIL)
-                draw.ellipse([(ex + 9, 64), (ex + 11, 66)], fill=_WHITE)  # catchlight
-            # Lower lash line
-            draw.arc([(32, 58), (56, 73)], 0, 180, fill=_BROW, width=1)
-            draw.arc([(70, 58), (94, 73)], 0, 180, fill=_BROW, width=1)
-        else:
-            # Closed — eyelid curve
-            draw.arc([(32, 58), (56, 73)], 0, 180, fill=_BROW, width=2)
-            draw.arc([(70, 58), (94, 73)], 0, 180, fill=_BROW, width=2)
-
-        # Nose (subtle arc)
-        draw.arc([(57, 78), (71, 88)], 0, 180, fill=(185, 140, 105), width=1)
-
-        # Mouth
-        if mouth_open:
-            draw.ellipse([(49, 91), (79, 103)], fill=(65, 14, 14))
-            draw.arc([(47, 87), (81, 99)],  180, 360, fill=_LIP, width=3)  # upper lip
-            draw.arc([(49, 96), (79, 108)],   0, 180, fill=_LIP, width=2)  # lower lip
-        else:
-            draw.arc([(47, 90), (81, 103)], 0, 180, fill=_LIP, width=3)
-
-        return img
+    def _button_loop(self):
+        last = {KEY1_PIN: 1, KEY2_PIN: 1, KEY3_PIN: 1}
+        callbacks = {KEY1_PIN: self._cb_start, KEY2_PIN: self._cb_stop, KEY3_PIN: self._cb_wake}
+        while self._running:
+            for pin, cb in callbacks.items():
+                val = GPIO.input(pin)
+                if val == 0 and last[pin] == 1:   # falling edge = press
+                    cb(pin)
+                last[pin] = val
+            time.sleep(0.05)
 
     # ── Render thread ──────────────────────────────────────────────────────
 
@@ -248,22 +238,29 @@ class LCDDisplay:
         blink_dur  = 0.12  # how long eyes stay shut
 
         while self._running:
-            with self._lock:
-                mode   = self._mode
-                status = dict(self._status)
-                mouth  = self._mouth
+            try:
+                with self._lock:
+                    mode   = self._mode
+                    status = dict(self._status)
+                    mouth  = self._mouth
 
-            if mode == "status":
-                img = self._draw_status(**status)
-            else:
-                now = time.time()
-                if eyes_open and now - last_blink >= blink_int:
-                    eyes_open  = False
-                    last_blink = now
-                elif not eyes_open and now - last_blink >= blink_dur:
-                    eyes_open = True
+                if mode == "status":
+                    img = self._draw_status(**status)
+                else:
+                    now = time.time()
+                    if eyes_open and now - last_blink >= blink_int:
+                        eyes_open  = False
+                        last_blink = now
+                    elif not eyes_open and now - last_blink >= blink_dur:
+                        eyes_open = True
 
-                img = self._draw_face(eyes_open, mouth)
+                    img = self._draw_face(eyes_open, mouth)
 
-            self._flush(img)
-            time.sleep(0.08)   # ~12 fps
+                self._flush(img)
+                time.sleep(0.08)   # ~12 fps
+
+            except Exception as e:
+                import traceback
+                print(f"[LCD render error] {e}")
+                traceback.print_exc()
+                time.sleep(1.0)   # pause before retrying
