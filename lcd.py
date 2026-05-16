@@ -13,6 +13,8 @@ BL_PIN   = 24
 KEY1_PIN = 21   # Start Hali
 KEY2_PIN = 20   # Stop  Hali
 KEY3_PIN = 16   # Manual wake
+JOY_UP   = 6    # Start/restart Hali
+JOY_DOWN = 19   # Shutdown Pi
 
 WIDTH  = 128
 HEIGHT = 128
@@ -50,10 +52,12 @@ class LCDDisplay:
     daemon threads so they can block without stalling the display.
     """
 
-    def __init__(self, on_start=None, on_stop=None, on_wake=None):
-        self.on_start = on_start
-        self.on_stop  = on_stop
-        self.on_wake  = on_wake
+    def __init__(self, on_start=None, on_stop=None, on_wake=None, on_shutdown=None, on_restart=None):
+        self.on_start    = on_start
+        self.on_stop     = on_stop
+        self.on_wake     = on_wake
+        self.on_shutdown = on_shutdown
+        self.on_restart  = on_restart
 
         self._lock    = threading.Lock()
         self._mode    = "status"
@@ -79,7 +83,7 @@ class LCDDisplay:
         for pin, mode in [(RST_PIN, GPIO.OUT), (DC_PIN, GPIO.OUT), (BL_PIN, GPIO.OUT)]:
             GPIO.setup(pin, mode)
         GPIO.output(BL_PIN, GPIO.HIGH)
-        for pin in (KEY1_PIN, KEY2_PIN, KEY3_PIN):
+        for pin in (KEY1_PIN, KEY2_PIN, KEY3_PIN, JOY_UP, JOY_DOWN):
             GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     def _spi_init(self):
@@ -138,6 +142,14 @@ class LCDDisplay:
     def _cb_wake(self, _):
         if self.on_wake:
             threading.Thread(target=self.on_wake, daemon=True).start()
+
+    def _cb_shutdown(self, _):
+        if self.on_shutdown:
+            threading.Thread(target=self.on_shutdown, daemon=True).start()
+
+    def _cb_restart(self, _):
+        if self.on_restart:
+            threading.Thread(target=self.on_restart, daemon=True).start()
 
     # ── Public API ─────────────────────────────────────────────────────────
 
@@ -219,8 +231,9 @@ class LCDDisplay:
     # ── Button polling thread ──────────────────────────────────────────────
 
     def _button_loop(self):
-        last = {KEY1_PIN: 1, KEY2_PIN: 1, KEY3_PIN: 1}
-        callbacks = {KEY1_PIN: self._cb_start, KEY2_PIN: self._cb_stop, KEY3_PIN: self._cb_wake}
+        last = {KEY1_PIN: 1, KEY2_PIN: 1, KEY3_PIN: 1, JOY_UP: 1, JOY_DOWN: 1}
+        callbacks = {KEY1_PIN: self._cb_start, KEY2_PIN: self._cb_stop, KEY3_PIN: self._cb_wake,
+                     JOY_UP: self._cb_restart, JOY_DOWN: self._cb_shutdown}
         while self._running:
             for pin, cb in callbacks.items():
                 val = GPIO.input(pin)

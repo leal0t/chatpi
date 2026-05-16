@@ -7,13 +7,13 @@ from listen import record_audio
 from chat import transcribe, ask_chatgpt
 from speak import speak_audio
 
-WAKE_GREETING = "Hey, what's up.  How's everything going?"
+WAKE_GREETING = "Hey, what's up. How's everything going?"
 WAKE_SHORT_ACK = "Yeah?"
 SLEEP_ACK = "Okay. Going back to sleep.  me! me! me! me!"
 GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 
 SILENCE_TIMEOUT_SECONDS = 10
-SILENCE_RMS_THRESHOLD = 0.005
+SILENCE_RMS_THRESHOLD = 0.015
 MAX_CONVERSATION_TURNS = 12
 
 GOODBYE_PATTERNS = [
@@ -93,7 +93,6 @@ def is_greeting(text: str) -> bool:
 
 def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None):
 	conversation_history = []
-	first_turn = True
 
 	print("🗣 Hali is awake. You don't need the wake word now.")
 	print("Just talk. Say 'goodbye' (or 'go to sleep') to end.\n")
@@ -154,21 +153,10 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None)
 			else:
 				continue
 
-		if first_turn and is_greeting(text):
-			print("👋 Greeting phrase detected (first turn).")
-			speak_audio(GREET_ACK, lcd=lcd)
-			if lcd:
-				lcd.show_face(mouth_open=False)
-			last_activity = time.monotonic()
-			first_turn = False
-			continue
-
 		if is_goodbye(text):
 			print("👋 Goodbye phrase detected — sleeping.\n")
 			speak_audio(SLEEP_ACK, lcd=lcd)
 			return
-
-		first_turn = False
 
 		response = ask_chatgpt(conversation_history)
 		print(f"Hali: {response}\n")
@@ -208,7 +196,20 @@ def main():
 			if wake is not None:
 				wake.manual_wake()
 
-		lcd = LCDDisplay(on_start=on_start, on_stop=on_stop, on_wake=on_wake)
+		def on_shutdown():
+			import subprocess
+			print("⬇️  Joystick DOWN: stopping Hali...")
+			if lcd is not None:
+				lcd.show_status("SLEEPING", detail="Stopped")
+			subprocess.run(["systemctl", "--user", "stop", "hali.service"])
+
+		def on_restart():
+			import subprocess
+			print("⬆️  Joystick UP: restarting Hali...")
+			subprocess.run(["systemctl", "--user", "restart", "hali.service"])
+
+		lcd = LCDDisplay(on_start=on_start, on_stop=on_stop, on_wake=on_wake,
+		                 on_shutdown=on_shutdown, on_restart=on_restart)
 		print("🖥  LCD initialised")
 	except Exception as e:
 		print(f"⚠️  LCD not available ({e}) — running headless")
@@ -221,8 +222,8 @@ def main():
 		energy_threshold=0.020,
 		wakeword_class=0,
 		cooldown_seconds=2.0,
-		confidence_threshold=0.30,
-		confidence_margin=0.08,
+		confidence_threshold=0.50,
+		confidence_margin=0.15,
 		max_misses=10,
 		rest_seconds=5.0,
 		device=None,

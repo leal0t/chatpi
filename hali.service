@@ -1,0 +1,17 @@
+[Unit]
+Description=Hali Voice Assistant
+After=network.target sound.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/chatpi
+Environment=HOME=/home/pi
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/bash -c '/home/pi/chatpi/venv/bin/python3 /home/pi/chatpi/main.py > /home/pi/chatpi/hali.log 2>&1'
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

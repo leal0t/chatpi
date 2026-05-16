@@ -5,17 +5,18 @@ import numpy as np
 
 def record_audio(filename="input.wav",
                  samplerate=16000,
-                 silence_duration=2.0,
+                 silence_duration=1.2,
                  max_duration=30.0):
     """
     Record until 1 second of silence after speech, or max_duration seconds.
     Calibrates silence threshold from the ambient noise floor at the start.
     Returns (filename, rms_level).
     """
-    chunk_duration = 0.1  # 100ms chunks
-    chunk_samples  = int(chunk_duration * samplerate)
-    silence_needed = int(silence_duration / chunk_duration)
-    max_chunks     = int(max_duration / chunk_duration)
+    chunk_duration   = 0.1  # 100ms chunks
+    chunk_samples    = int(chunk_duration * samplerate)
+    silence_needed   = int(silence_duration / chunk_duration)
+    max_chunks       = int(max_duration / chunk_duration)
+    no_speech_chunks = int(8.0 / chunk_duration)  # bail out after 8s if no speech starts
     calibrate_chunks = 5  # 0.5s of ambient sampling
 
     print("Listening... speak now.")
@@ -37,7 +38,7 @@ def record_audio(filename="input.wav",
         silence_count  = 0
         speech_started = False
 
-        for _ in range(max_chunks):
+        for i, _ in enumerate(range(max_chunks)):
             chunk, _ = stream.read(chunk_samples)
             chunk_mono = chunk[:, 0]
             rms = float(np.sqrt(np.mean(chunk_mono ** 2)))
@@ -51,6 +52,8 @@ def record_audio(filename="input.wav",
                 silence_count += 1
                 if silence_count >= silence_needed:
                     break
+            elif not speech_started and i >= no_speech_chunks:
+                break  # no speech within 8s — give up early
 
     audio = np.concatenate(frames) if frames else np.zeros(chunk_samples, dtype=np.float32)
     rms   = float(np.sqrt(np.mean(audio ** 2)))
