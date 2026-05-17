@@ -6,6 +6,7 @@ from edge_wakeword import EdgeWakeWordDetector
 from listen import record_audio
 from chat import transcribe, ask_chatgpt
 from speak import speak_audio
+from memory import load_history, save_history
 
 WAKE_GREETING = "Hey, what's up. How's everything going?"
 WAKE_SHORT_ACK = "Yeah?"
@@ -14,7 +15,7 @@ GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 
 SILENCE_TIMEOUT_SECONDS = 10
 SILENCE_RMS_THRESHOLD = 0.015
-MAX_CONVERSATION_TURNS = 12
+MAX_CONVERSATION_TURNS = 40
 
 GOODBYE_PATTERNS = [
 	r"\bgoodbye\b",
@@ -91,8 +92,9 @@ def is_greeting(text: str) -> bool:
 	return any(w in t for w in GREETING_WORDS)
 
 
-def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None):
-	conversation_history = []
+def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None, conversation_history=None):
+	if conversation_history is None:
+		conversation_history = []
 
 	print("🗣 Hali is awake. You don't need the wake word now.")
 	print("Just talk. Say 'goodbye' (or 'go to sleep') to end.\n")
@@ -114,7 +116,7 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None)
 		if stop_event and stop_event.is_set():
 			stop_event.clear()
 			print("🔴 Stopped mid-conversation.")
-			return
+			return conversation_history
 
 		print("🎙 Listening for your question (or I'll nap soon)...")
 		audio_file, rms = record_audio()
@@ -125,7 +127,7 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None)
 			print(f"(Silence / very quiet chunk: rms={rms:.4f})")
 			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
 				print("😴 No speech detected for a bit — going back to sleep.\n")
-				return
+				return conversation_history
 			else:
 				print("🤔 Didn't hear much that time, but I'm still awake.\n")
 				continue
@@ -142,21 +144,21 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None)
 			print(f"📺 Ignoring background phrase: {clean_text!r}")
 			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
 				print("😴 Background noise only — going back to sleep.\n")
-				return
+				return conversation_history
 			continue
 
 		if not clean_text or len(clean_text) < 3:
 			print("🤔 That sounded like noise, not real speech.")
 			if now - last_activity > SILENCE_TIMEOUT_SECONDS:
 				print("😴 No real speech for a bit — going back to sleep.\n")
-				return
+				return conversation_history
 			else:
 				continue
 
 		if is_goodbye(text):
 			print("👋 Goodbye phrase detected — sleeping.\n")
 			speak_audio(SLEEP_ACK, lcd=lcd)
-			return
+			return conversation_history
 
 		response = ask_chatgpt(conversation_history)
 		print(f"Hali: {response}\n")
@@ -167,6 +169,7 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None)
 		speak_audio(response, lcd=lcd)
 		if lcd:
 			lcd.show_face(mouth_open=False)
+		save_history(conversation_history)
 		last_activity = time.monotonic()
 
 
@@ -241,6 +244,9 @@ def main():
 	start_event.clear()
 	print("Starting...\n")
 
+	conversation_history = load_history()
+	print(f"💭 Loaded {len(conversation_history)} messages from memory.")
+
 	try:
 		while True:
 			detected = wake.wait_for_wake_word()
@@ -257,7 +263,9 @@ def main():
 				continue
 
 			try:
-				conversation_loop(lcd=lcd, say_full_greeting=True, stop_event=stop_event)
+				result = conversation_loop(lcd=lcd, say_full_greeting=True, stop_event=stop_event, conversation_history=conversation_history)
+				if result is not None:
+					conversation_history = result
 			except Exception as e:
 				print(f"⚠️  Conversation error: {e}")
 
