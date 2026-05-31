@@ -18,8 +18,8 @@ def speak_audio(text, lcd=None):
     with open(output, "wb") as f:
         f.write(speech.read())
 
-    # PipeWire/PulseAudio playback
-    proc     = subprocess.Popen(["paplay", output])
+    # PipeWire/PulseAudio playback — locked to USB speaker
+    proc     = subprocess.Popen(["paplay", "--device=alsa_output.usb-Generic_USB2.0_Device_20121120222012-00.analog-stereo", output])
     deadline = time.time() + 60.0  # never hang more than 60s
 
     if lcd:

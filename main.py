@@ -7,6 +7,36 @@ from listen import record_audio
 from chat import transcribe, ask_chatgpt
 from speak import speak_audio
 from memory import load_history, save_history
+import spotify
+
+DEVICE_ALIASES = {
+	"sync":      "cinc",
+	"sink":      "cinc",
+	"cinc":      "cinc",
+	"echo":      "echo",
+	"the echo":  "echo",
+	"karen":     "echo",
+}
+
+PLAY_PATTERN = re.compile(
+	r'\b(?:play|put on|throw on)\s+(?:some\s+)?(.+?)(?:\s+on\s+(?:the\s+)?(\w+(?:\s+\w+)?))?\s*[.!?]?\s*$',
+	re.IGNORECASE
+)
+
+def detect_play_intent(text: str):
+	"""Returns (query, device_hint) if user is asking to play music, else (None, None)."""
+	m = PLAY_PATTERN.search(text.strip())
+	if not m:
+		return None, None
+	query = m.group(1).strip().rstrip('.,!?')
+	# Filter out non-music phrases
+	if any(w in query.lower() for w in ["game", "with me", "fetch", "dead", "possum"]):
+		return None, None
+	device = m.group(2).lower().strip() if m.group(2) else None
+	if device:
+		device = DEVICE_ALIASES.get(device, device)
+	return query, device
+
 
 WAKE_GREETING = "Hey, what's up. How's everything going?"
 WAKE_SHORT_ACK = "Yeah?"
@@ -14,7 +44,7 @@ SLEEP_ACK = "Okay. Going back to sleep.  me! me! me! me!"
 GREET_ACK = "Taking it easy. Just relaxing and enjoying a nice glass of whisky."
 
 SILENCE_TIMEOUT_SECONDS = 10
-SILENCE_RMS_THRESHOLD = 0.015
+SILENCE_RMS_THRESHOLD = 0.005
 MAX_CONVERSATION_TURNS = 40
 
 GOODBYE_PATTERNS = [
@@ -70,6 +100,49 @@ IGNORE_PHRASES = [
 ]
 
 
+def handle_music_commands(response: str) -> str:
+	"""Execute any [MUSIC_CMD] tags in response and return cleaned text."""
+	play_match = re.search(r'\[PLAY:([^\]|]+)(?:\|([^\]]+))?\]', response, re.IGNORECASE)
+	if play_match:
+		query  = play_match.group(1).strip()
+		device = play_match.group(2).strip() if play_match.group(2) else None
+		print(f"🎵 Spotify play: {query!r} device: {device!r}")
+		spotify.play_search(query, device_hint=device)
+		response = (response[:play_match.start()] + response[play_match.end():]).strip()
+
+	if re.search(r'\[PAUSE\]', response, re.IGNORECASE):
+		print("🎵 Spotify pause")
+		spotify.pause()
+		response = re.sub(r'\[PAUSE\]', '', response, flags=re.IGNORECASE).rstrip()
+
+	if re.search(r'\[RESUME\]', response, re.IGNORECASE):
+		print("🎵 Spotify resume")
+		spotify.resume()
+		response = re.sub(r'\[RESUME\]', '', response, flags=re.IGNORECASE).rstrip()
+
+	if re.search(r'\[SKIP\]', response, re.IGNORECASE):
+		print("🎵 Spotify skip")
+		spotify.skip()
+		response = re.sub(r'\[SKIP\]', '', response, flags=re.IGNORECASE).rstrip()
+
+	vol_match = re.search(r'\[VOLUME:(\d+)\]', response, re.IGNORECASE)
+	if vol_match:
+		pct = int(vol_match.group(1))
+		print(f"🎵 Spotify volume: {pct}")
+		spotify.set_volume(pct)
+		response = response[:vol_match.start()].rstrip()
+
+	if re.search(r'\[NOW_PLAYING\]', response, re.IGNORECASE):
+		track = spotify.now_playing()
+		if track:
+			info = f"{track['name']} by {track['artist']}"
+			response = re.sub(r'\[NOW_PLAYING\]', info, response, flags=re.IGNORECASE)
+		else:
+			response = re.sub(r'\[NOW_PLAYING\]', 'nothing right now', response, flags=re.IGNORECASE)
+
+	return response.strip()
+
+
 def is_goodbye(text: str) -> bool:
 	t = (text or "").strip().lower()
 	if re.search(r"\bgo to sleep\b", t):
@@ -110,6 +183,7 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None,
 	if lcd:
 		lcd.show_face(mouth_open=False)
 
+	time.sleep(0.8)  # let speaker audio die out before mic starts
 	last_activity = time.monotonic()
 
 	while True:
@@ -160,7 +234,22 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None,
 			speak_audio(SLEEP_ACK, lcd=lcd)
 			return conversation_history
 
+		# Direct play intent detection — reliable, bypasses GPT tag
+		play_query, play_device = detect_play_intent(text)
+		music_started = False
+		if play_query:
+			print(f"🎵 Play intent: {play_query!r} device: {play_device!r}")
+			try:
+				spotify.play_search(play_query, device_hint=play_device)
+				music_started = True
+			except Exception as e:
+				print(f"[spotify] {e}")
+
 		response = ask_chatgpt(conversation_history)
+		try:
+			response = handle_music_commands(response)
+		except Exception as e:
+			print(f"[spotify] Command error: {e}")
 		print(f"Hali: {response}\n")
 
 		conversation_history.append({"role": "assistant", "content": response})
@@ -169,8 +258,13 @@ def conversation_loop(lcd=None, say_full_greeting: bool = True, stop_event=None,
 		speak_audio(response, lcd=lcd)
 		if lcd:
 			lcd.show_face(mouth_open=False)
+		time.sleep(0.8)  # let speaker audio die out before mic starts
 		save_history(conversation_history)
 		last_activity = time.monotonic()
+
+		if music_started:
+			print("🎵 Music playing — going back to sleep.\n")
+			return conversation_history
 
 
 def main():
@@ -222,14 +316,14 @@ def main():
 		samplerate=16000,
 		frame_duration=1.0,
 		hop_duration=0.20,
-		energy_threshold=0.020,
+		energy_threshold=0.008,
 		wakeword_class=0,
 		cooldown_seconds=2.0,
-		confidence_threshold=0.50,
-		confidence_margin=0.15,
+		confidence_threshold=0.45,
+		confidence_margin=0.12,
 		max_misses=10,
 		rest_seconds=5.0,
-		device=None,
+		device='pulse',
 		lcd=lcd,
 	)
 

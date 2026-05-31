@@ -1,6 +1,7 @@
-import sounddevice as sd
-import wavio
+import subprocess
 import numpy as np
+import wave
+import io
 
 
 def record_audio(filename="input.wav",
@@ -9,41 +10,53 @@ def record_audio(filename="input.wav",
                  max_duration=30.0):
     """
     Record until 1 second of silence after speech, or max_duration seconds.
-    Calibrates silence threshold from the ambient noise floor at the start.
+    Uses parec (PulseAudio native) to capture from the default source.
     Returns (filename, rms_level).
     """
-    chunk_duration   = 0.1  # 100ms chunks
+    chunk_duration   = 0.1
     chunk_samples    = int(chunk_duration * samplerate)
+    chunk_bytes      = chunk_samples * 2  # s16le = 2 bytes per sample
     silence_needed   = int(silence_duration / chunk_duration)
     max_chunks       = int(max_duration / chunk_duration)
-    no_speech_chunks = int(8.0 / chunk_duration)  # bail out after 8s if no speech starts
-    calibrate_chunks = 5  # 0.5s of ambient sampling
+    no_speech_chunks = int(8.0 / chunk_duration)
+    calibrate_chunks = 5
 
     print("Listening... speak now.")
 
-    with sd.InputStream(samplerate=samplerate, channels=1, dtype="float32",
-                        blocksize=chunk_samples) as stream:
+    cmd = [
+        "parec",
+        "--rate=16000",
+        "--channels=1",
+        "--format=s16le",
+        "--latency-msec=50",
+        "--device=alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.mono-fallback",
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-        # Measure ambient noise floor
+    try:
+        # Calibrate noise floor
         noise_samples = []
         for _ in range(calibrate_chunks):
-            chunk, _ = stream.read(chunk_samples)
-            noise_samples.append(float(np.sqrt(np.mean(chunk[:, 0] ** 2))))
-        noise_floor = float(np.mean(noise_samples))
-        # Speech threshold: 3x the noise floor, minimum 0.005
+            raw = proc.stdout.read(chunk_bytes)
+            if len(raw) < chunk_bytes:
+                break
+            chunk = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+            noise_samples.append(float(np.sqrt(np.mean(chunk ** 2))))
+        noise_floor = float(np.mean(noise_samples)) if noise_samples else 0.005
         speech_threshold = max(noise_floor * 2.5, 0.005)
         print(f"  noise floor: {noise_floor:.5f}  speech threshold: {speech_threshold:.5f}")
 
-        frames         = []
-        silence_count  = 0
+        frames        = []
+        silence_count = 0
         speech_started = False
 
-        for i, _ in enumerate(range(max_chunks)):
-            chunk, _ = stream.read(chunk_samples)
-            chunk_mono = chunk[:, 0]
-            rms = float(np.sqrt(np.mean(chunk_mono ** 2)))
-
-            frames.append(chunk_mono)
+        for i in range(max_chunks):
+            raw = proc.stdout.read(chunk_bytes)
+            if len(raw) < chunk_bytes:
+                break
+            chunk = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+            rms = float(np.sqrt(np.mean(chunk ** 2)))
+            frames.append(chunk)
 
             if rms > speech_threshold:
                 speech_started = True
@@ -53,10 +66,19 @@ def record_audio(filename="input.wav",
                 if silence_count >= silence_needed:
                     break
             elif not speech_started and i >= no_speech_chunks:
-                break  # no speech within 8s — give up early
+                break
+
+    finally:
+        proc.terminate()
+        proc.wait()
 
     audio = np.concatenate(frames) if frames else np.zeros(chunk_samples, dtype=np.float32)
     rms   = float(np.sqrt(np.mean(audio ** 2)))
-    wavio.write(filename, audio.reshape(-1, 1), samplerate, sampwidth=2)
+
+    with wave.open(filename, "w") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(samplerate)
+        wf.writeframes((audio * 32767).astype(np.int16).tobytes())
 
     return filename, rms
