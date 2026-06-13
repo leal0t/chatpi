@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_CLIENT_ID     = "SPOTIFY_CLIENT_ID_REMOVED"
-_CLIENT_SECRET = "SPOTIFY_CLIENT_SECRET_REMOVED"
-_REFRESH_TOKEN = "SPOTIFY_REFRESH_TOKEN_REMOVED"
+_CLIENT_ID     = os.getenv("SPOTIFY_CLIENT_ID")
+_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+_REFRESH_TOKEN = os.getenv("SPOTIFY_REFRESH_TOKEN")
 
 DEVICE_MAP = {
     "echo":  "Karen's Echo Dot",
